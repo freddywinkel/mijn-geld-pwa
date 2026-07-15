@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#172b24" />
+    <meta
+      name="description"
+      content="Een rustig, offline overzicht van je geld, vaste lasten en spaardoelen."
+    />
+    <link rel="manifest" href="./manifest.webmanifest" />
+    <link rel="apple-touch-icon" href="./icon.svg" />
+    <link rel="stylesheet" href="./styles.css" />
+    <title>Mijn Geld</title>
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Hoofdnavigatie">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">€</div>
+          <div>
+            <p class="brand-name">Mijn Geld</p>
+            <p class="brand-subtitle">Rustig overzicht</p>
+          </div>
+        </div>
+
+        <nav class="main-nav">
+          <button class="nav-item is-active" type="button" data-view="dashboard">
+            <span aria-hidden="true">⌂</span>
+            <span>Overzicht</span>
+          </button>
+          <button class="nav-item" type="button" data-view="planning">
+            <span aria-hidden="true">◷</span>
+            <span>Planning</span>
+          </button>
+          <button class="nav-item" type="button" data-view="jars">
+            <span aria-hidden="true">◌</span>
+            <span>Spaarpotjes</span>
+          </button>
+          <button class="nav-item" type="button" data-view="settings">
+            <span aria-hidden="true">⚙</span>
+            <span>Instellingen</span>
+          </button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <button class="start-button" type="button" data-action="open-balance-modal">
+            <span aria-hidden="true">+</span>
+            Saldi invullen
+          </button>
+          <p>Alles blijft alleen op dit apparaat.</p>
+        </div>
+      </aside>
+
+      <main id="app" class="app-main" tabindex="-1"></main>
+    </div>
+
+    <div id="modal-root" class="modal-root" aria-live="polite"></div>
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="./app.js" defer></script>
+  </body>
+</html>

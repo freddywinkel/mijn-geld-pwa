@@ -1,0 +1,19 @@
+{
+  "name": "Mijn Geld",
+  "short_name": "Mijn Geld",
+  "description": "Rustig offline financieel overzicht met een betaalcyclus rond je salarisdag.",
+  "lang": "nl-NL",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f6f0",
+  "theme_color": "#172b24",
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

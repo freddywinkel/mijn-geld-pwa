@@ -1,0 +1,11 @@
+# Local browser exports and machine-specific files
+*.local
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+
+# Optional tooling output
+node_modules/
+dist/
+coverage/
