@@ -57,6 +57,24 @@
 
     <div id="modal-root" class="modal-root" aria-live="polite"></div>
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    <aside
+      id="update-prompt"
+      class="update-prompt is-hidden"
+      role="status"
+      aria-live="polite"
+      aria-atomic="true"
+      aria-labelledby="update-prompt-title"
+      aria-describedby="update-prompt-description"
+    >
+      <div class="update-prompt__copy">
+        <strong id="update-prompt-title">Nieuwe versie klaar</strong>
+        <p id="update-prompt-description">Je gegevens blijven op dit apparaat staan. Werk Mijn Geld bij wanneer het uitkomt.</p>
+      </div>
+      <div class="update-prompt__actions">
+        <button id="update-later" class="button button-secondary button-small" type="button">Later</button>
+        <button id="update-now" class="button button-primary button-small" type="button">Bijwerken</button>
+      </div>
+    </aside>
 
     <script src="./app.js" defer></script>
   </body>

@@ -38,11 +38,316 @@
   const app = document.getElementById("app");
   const modalRoot = document.getElementById("modal-root");
   const toast = document.getElementById("toast");
+  const updatePrompt = document.getElementById("update-prompt");
+  const PREFILL_REVISION = "financial-overview-v4-adjusted";
+  const WORKBOOK_PREFILL = {
+    items: [
+      {
+        id: "workbook-cerba-salary",
+        sourceKey: "workbook:cerba-salary",
+        name: "Cerba salaris",
+        type: "income",
+        amount: 3180.16,
+        account: "rabobank",
+        cadence: "payday",
+        dayOfMonth: 25,
+        date: "2026-01-25",
+        jarId: ""
+      },
+      {
+        id: "workbook-boezemkade-rent",
+        sourceKey: "workbook:boezemkade-rent",
+        name: "Boezemkade huurinkomst",
+        type: "income",
+        amount: 518.65,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-rent",
+        sourceKey: "workbook:rent-2e-middelandstraat",
+        name: "Huur 2e Middelandstraat",
+        type: "expense",
+        amount: 1033.5,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-interpolis-health",
+        sourceKey: "workbook:interpolis-health",
+        name: "Interpolis zorgverzekering",
+        type: "expense",
+        amount: 190.7,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-interpolis-home",
+        sourceKey: "workbook:interpolis-home",
+        name: "Interpolis woonverzekering",
+        type: "expense",
+        amount: 31.3,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-interpolis-deductible",
+        sourceKey: "workbook:interpolis-deductible",
+        name: "Interpolis eigen risico",
+        type: "expense",
+        amount: 38.5,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-mobile-insurance",
+        sourceKey: "workbook:mobile-insurance",
+        name: "Mobiele verzekering (Chubb)",
+        type: "expense",
+        amount: 15.95,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-odido",
+        sourceKey: "workbook:odido",
+        name: "Odido",
+        type: "expense",
+        amount: 68.76,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-netflix",
+        sourceKey: "workbook:netflix",
+        name: "Netflix",
+        type: "expense",
+        amount: 22.98,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-spotify",
+        sourceKey: "workbook:spotify",
+        name: "Spotify",
+        type: "expense",
+        amount: 10.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-videoland",
+        sourceKey: "workbook:videoland",
+        name: "Videoland",
+        type: "expense",
+        amount: 11.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-npo",
+        sourceKey: "workbook:npo-start-plus",
+        name: "NPO Start Plus",
+        type: "expense",
+        amount: 2.95,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-youtube",
+        sourceKey: "workbook:youtube-premium",
+        name: "YouTube Premium",
+        type: "expense",
+        amount: 11.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-itunes",
+        sourceKey: "workbook:itunes",
+        name: "iTunes",
+        type: "expense",
+        amount: 6.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-google-storage",
+        sourceKey: "workbook:google-storage",
+        name: "Google Storage",
+        type: "expense",
+        amount: 1.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-apple-arcade",
+        sourceKey: "workbook:apple-arcade",
+        name: "Apple Arcade (PayPal)",
+        type: "expense",
+        amount: 6.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-apple-tv",
+        sourceKey: "workbook:apple-tv",
+        name: "Apple TV+ (PayPal)",
+        type: "expense",
+        amount: 9.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-chatgpt",
+        sourceKey: "workbook:chatgpt",
+        name: "ChatGPT (PayPal)",
+        type: "expense",
+        amount: 22.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-crunchyroll",
+        sourceKey: "workbook:crunchyroll",
+        name: "Crunchyroll",
+        type: "expense",
+        amount: 6.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-manga-plus",
+        sourceKey: "workbook:manga-plus",
+        name: "Manga Plus",
+        type: "expense",
+        amount: 5.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-hbo-max",
+        sourceKey: "workbook:hbo-max",
+        name: "HBO Max",
+        type: "expense",
+        amount: 9.99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-replit",
+        sourceKey: "workbook:replit",
+        name: "Replit",
+        type: "expense",
+        amount: 46,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-kimi-allegro",
+        sourceKey: "workbook:kimi-allegro",
+        name: "KIMI AI / Allegro (PayPal)",
+        type: "expense",
+        amount: 99,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-bunq-savings",
+        sourceKey: "workbook:bunq-savings",
+        name: "Bunq maandelijkse spaarinleg",
+        type: "saving",
+        amount: 1112.78,
+        account: "bunq",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      }
+    ],
+    savingsJars: [
+      {
+        id: "workbook-iphone-jar",
+        sourceKey: "workbook:iphone-jar",
+        name: "iPhone 17 Pro Max",
+        balance: 0,
+        target: 1729
+      }
+    ]
+  };
 
   const state = {
     data: loadData(),
     activeView: "dashboard",
-    deferredInstallPrompt: null
+    deferredInstallPrompt: null,
+    waitingServiceWorker: null,
+    isUpdating: false
   };
 
   function createDate(year, month, day) {
@@ -76,9 +381,9 @@
     return date;
   }
 
-  function getDefaultData() {
+  function getBaseData() {
     return {
-      version: 1,
+      version: 2,
       hasSetBalances: false,
       balances: {
         rabobank: 0,
@@ -90,9 +395,50 @@
       settings: {
         rbcTransferEnabled: false,
         rbcTransferAmount: 600,
-        rbcTransferDate: dateInputValue(new Date())
+        rbcTransferDate: dateInputValue(new Date()),
+        dateReviewNotice: true
       }
     };
+  }
+
+  function applyWorkbookPrefill(data) {
+    if (data.prefillRevision === PREFILL_REVISION) {
+      return data;
+    }
+
+    const existingSourceKeys = new Set(
+      data.items.map((item) => item.sourceKey).filter(Boolean)
+    );
+    WORKBOOK_PREFILL.items.forEach((item) => {
+      if (!existingSourceKeys.has(item.sourceKey)) {
+        data.items.push({ ...item });
+      }
+    });
+
+    const existingJarKeys = new Set(
+      data.savingsJars.map((jar) => jar.sourceKey).filter(Boolean)
+    );
+    WORKBOOK_PREFILL.savingsJars.forEach((jar) => {
+      if (!existingJarKeys.has(jar.sourceKey)) {
+        data.savingsJars.push({ ...jar });
+      }
+    });
+
+    data.version = 2;
+    data.prefillRevision = PREFILL_REVISION;
+    data.settings.dateReviewNotice = true;
+    return data;
+  }
+
+  function getDefaultData() {
+    return applyWorkbookPrefill(getBaseData());
+  }
+
+  function getBlankData() {
+    const data = getBaseData();
+    data.prefillRevision = PREFILL_REVISION;
+    data.settings.dateReviewNotice = false;
+    return data;
   }
 
   function numberValue(value, fallback) {
@@ -114,11 +460,12 @@
           .filter((item) => item && typeof item === "object")
           .map((item) => ({
             id: String(item.id || createId("post")),
+            sourceKey: item.sourceKey ? String(item.sourceKey) : "",
             name: String(item.name || "Naamloze post"),
             type: ["expense", "income", "saving"].includes(item.type) ? item.type : "expense",
             amount: Math.max(0, numberValue(item.amount, 0)),
             account: ["rabobank", "bunq"].includes(item.account) ? item.account : "bunq",
-            cadence: item.cadence === "once" ? "once" : "monthly",
+            cadence: ["once", "payday"].includes(item.cadence) ? item.cadence : "monthly",
             dayOfMonth: Math.min(31, Math.max(1, Math.round(numberValue(item.dayOfMonth, 1)))),
             date: parseDateInput(item.date) ? item.date : dateInputValue(new Date()),
             jarId: item.jarId ? String(item.jarId) : ""
@@ -130,6 +477,7 @@
           .filter((jar) => jar && typeof jar === "object")
           .map((jar) => ({
             id: String(jar.id || createId("potje")),
+            sourceKey: jar.sourceKey ? String(jar.sourceKey) : "",
             name: String(jar.name || "Spaarpotje"),
             balance: Math.max(0, numberValue(jar.balance, 0)),
             target: Math.max(0, numberValue(jar.target, 0))
@@ -141,8 +489,8 @@
         ? rawData.paidOccurrences
         : {};
 
-    return {
-      version: 1,
+    return applyWorkbookPrefill({
+      version: 2,
       hasSetBalances: Boolean(rawData.hasSetBalances),
       balances: {
         rabobank: numberValue(rawData.balances && rawData.balances.rabobank, 0),
@@ -160,9 +508,13 @@
         rbcTransferDate:
           parseDateInput(rawData.settings && rawData.settings.rbcTransferDate)
             ? rawData.settings.rbcTransferDate
-            : defaults.settings.rbcTransferDate
+            : defaults.settings.rbcTransferDate,
+        dateReviewNotice:
+          rawData.settings && typeof rawData.settings.dateReviewNotice === "boolean"
+            ? rawData.settings.dateReviewNotice
+            : false
       }
-    };
+    });
   }
 
   function loadData() {
@@ -255,6 +607,10 @@
     if (item.cadence === "once") {
       const date = parseDateInput(item.date);
       return isWithinCycle(date, cycle) ? date : null;
+    }
+
+    if (item.cadence === "payday") {
+      return cycle.start;
     }
 
     const initialDay = clampDay(
@@ -609,9 +965,11 @@
     const isIncome = entry.type === "income";
     const cadenceText = entry.virtual
       ? "optioneel"
-      : entry.cadence === "monthly"
-        ? "elke maand"
-        : "eenmalig";
+      : entry.cadence === "payday"
+        ? "salarisdag"
+        : entry.cadence === "monthly"
+          ? "elke maand"
+          : "eenmalig";
     const itemId = escapeHtml(entry.id);
     const dueDate = dateInputValue(entry.occurrence);
     const paidButton = entry.virtual
@@ -642,8 +1000,10 @@
       '">' +
       '<div class="planning-date"><label for="date-' +
       itemId +
-      '">Aftrekdatum</label>' +
-      (entry.virtual
+      '">' +
+      (entry.type === "income" ? "Ontvangstdatum" : "Aftrekdatum") +
+      "</label>" +
+      (entry.virtual || entry.cadence === "payday"
         ? '<div class="date-input" aria-label="Verwachte datum">' +
           escapeHtml(formatShortDate(entry.occurrence)) +
           "</div>"
@@ -753,8 +1113,12 @@
 
   function renderSettings(calculation) {
     const rbcDate = parseDateInput(state.data.settings.rbcTransferDate);
+    const prefillNotice = state.data.settings.dateReviewNotice
+      ? '<section class="quick-start"><div><strong>Werkbladgegevens zijn toegevoegd</strong><p>Je vaste lasten, inkomsten en spaarinleg komen uit Financial_Overview_v4_adjusted. De exacte aftrekdatums stonden niet in het werkblad en staan daarom voorlopig op de 1e; pas ze aan in Planning.</p></div><button class="button button-secondary button-small" type="button" data-action="dismiss-prefill-notice">Begrepen</button></section>'
+      : "";
     return (
       '<section><header class="page-header"><div><p class="eyebrow">Privé & offline</p><h1>Instellingen</h1><p class="subtle">Je gegevens worden alleen lokaal in deze browser opgeslagen. Er is geen bankkoppeling en geen account nodig.</p></div><div class="header-actions"><button class="button button-secondary" type="button" data-action="install-app">Installeer app</button></div></header>' +
+      prefillNotice +
       '<div class="settings-grid"><section class="panel settings-panel"><h2>Actuele saldo&apos;s</h2><p class="section-copy">Vul in wat er nu werkelijk op je rekeningen staat.</p><form id="settings-balance-form"><div class="field-grid"><div class="form-field"><label for="setting-rabobank">Rabobank</label><input id="setting-rabobank" name="rabobank" type="number" inputmode="decimal" step="0.01" value="' +
       escapeHtml(state.data.balances.rabobank) +
       '"></div><div class="form-field"><label for="setting-bunq">Bunq besteedbaar</label><input id="setting-bunq" name="bunq" type="number" inputmode="decimal" step="0.01" value="' +
@@ -831,6 +1195,8 @@
     const selectedDate = existing
       ? existing.cadence === "once"
         ? existing.date
+        : existing.cadence === "payday"
+          ? defaultDate
         : dateInputValue(
             createDate(
               calculation.cycle.start.getFullYear(),
@@ -879,7 +1245,9 @@
       (!existing || existing.cadence === "monthly" ? " selected" : "") +
       ">Elke maand</option><option value=\"once\"" +
       (existing && existing.cadence === "once" ? " selected" : "") +
-      ">Eenmalig</option></select></div><div class=\"form-field\"><label for=\"item-date\">Aftrek- of ontvangstdatum</label><input id=\"item-date\" name=\"date\" required type=\"date\" value=\"" +
+      ">Eenmalig</option><option value=\"payday\"" +
+      (existing && existing.cadence === "payday" ? " selected" : "") +
+      ">Salarisdag</option></select></div><div class=\"form-field\"><label for=\"item-date\">Aftrek- of ontvangstdatum</label><input id=\"item-date\" name=\"date\" required type=\"date\" value=\"" +
       escapeHtml(selectedDate) +
       '"></div><div class="form-field"><label for="item-jar">Spaarpotje</label><select id="item-jar" name="jarId">' +
       jarsOptions +
@@ -933,6 +1301,25 @@
   function closeModal() {
     modalRoot.innerHTML = "";
     document.body.style.overflow = "";
+  }
+
+  function showUpdatePrompt(worker) {
+    state.waitingServiceWorker = worker;
+    updatePrompt.classList.remove("is-hidden");
+  }
+
+  function dismissUpdatePrompt() {
+    state.waitingServiceWorker = null;
+    updatePrompt.classList.add("is-hidden");
+  }
+
+  function applyServiceWorkerUpdate() {
+    if (!state.waitingServiceWorker) {
+      return;
+    }
+
+    state.isUpdating = true;
+    state.waitingServiceWorker.postMessage({ type: "SKIP_WAITING" });
   }
 
   function showToast(message) {
@@ -996,6 +1383,11 @@
     }
     if (action === "goto-settings") {
       setActiveView("settings");
+      return;
+    }
+    if (action === "dismiss-prefill-notice") {
+      state.data.settings.dateReviewNotice = false;
+      commit();
       return;
     }
     if (action === "toggle-rbc") {
@@ -1066,7 +1458,7 @@
           "Alle lokale gegevens van Mijn Geld wissen? Dit kan alleen worden hersteld met een exportbestand."
         )
       ) {
-        state.data = getDefaultData();
+        state.data = getBlankData();
         commit("De lokale gegevens zijn gewist.");
       }
       return;
@@ -1119,6 +1511,7 @@
       const account = String(formData.get("account") || "");
       const cadence = String(formData.get("cadence") || "");
       const itemId = form.dataset.id;
+      const existingItem = itemId ? getItem(itemId) : null;
 
       if (
         !name ||
@@ -1126,7 +1519,7 @@
         !itemDate ||
         !["expense", "income", "saving"].includes(type) ||
         !["rabobank", "bunq"].includes(account) ||
-        !["monthly", "once"].includes(cadence)
+        !["monthly", "once", "payday"].includes(cadence)
       ) {
         showToast("Vul alle verplichte velden correct in.");
         return;
@@ -1134,6 +1527,7 @@
 
       const item = {
         id: itemId || createId("post"),
+        sourceKey: existingItem ? existingItem.sourceKey : "",
         name,
         type,
         amount,
@@ -1169,6 +1563,7 @@
 
       const jar = {
         id: jarId || createId("potje"),
+        sourceKey: existing ? existing.sourceKey : "",
         name,
         balance,
         target
@@ -1277,6 +1672,9 @@
     }
   });
 
+  document.getElementById("update-now").addEventListener("click", applyServiceWorkerUpdate);
+  document.getElementById("update-later").addEventListener("click", dismissUpdatePrompt);
+
   window.addEventListener("beforeinstallprompt", (event) => {
     event.preventDefault();
     state.deferredInstallPrompt = event;
@@ -1288,10 +1686,43 @@
   });
 
   if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("controllerchange", () => {
+      if (state.isUpdating) {
+        window.location.reload();
+      }
+    });
+
     window.addEventListener("load", () => {
-      navigator.serviceWorker.register("./service-worker.js").catch(() => {
-        showToast("Offline-modus wordt actief zodra de app via een webserver geopend is.");
-      });
+      navigator.serviceWorker
+        .register("./service-worker.js")
+        .then((registration) => {
+          if (registration.waiting && navigator.serviceWorker.controller) {
+            showUpdatePrompt(registration.waiting);
+          }
+
+          registration.addEventListener("updatefound", () => {
+            const installingWorker = registration.installing;
+            if (!installingWorker) {
+              return;
+            }
+
+            installingWorker.addEventListener("statechange", () => {
+              if (
+                installingWorker.state === "installed" &&
+                navigator.serviceWorker.controller
+              ) {
+                showUpdatePrompt(installingWorker);
+              }
+            });
+          });
+
+          window.addEventListener("focus", () => {
+            registration.update();
+          });
+        })
+        .catch(() => {
+          showToast("Offline-modus wordt actief zodra de app via een webserver geopend is.");
+        });
     });
   }
 

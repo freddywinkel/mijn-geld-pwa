@@ -1128,6 +1128,45 @@ h3 {
   transition: opacity 180ms ease, transform 180ms ease;
 }
 
+.update-prompt {
+  position: fixed;
+  z-index: 55;
+  right: 20px;
+  bottom: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  width: min(560px, calc(100vw - 40px));
+  padding: 14px 15px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: #ffffff;
+  box-shadow: 0 18px 45px rgba(18, 36, 27, 0.2);
+}
+
+.update-prompt__copy {
+  min-width: 0;
+}
+
+.update-prompt__copy strong {
+  display: block;
+  font-size: 13px;
+}
+
+.update-prompt__copy p {
+  margin: 4px 0 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+  line-height: 1.4;
+}
+
+.update-prompt__actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 7px;
+}
+
 .toast.is-visible {
   opacity: 1;
   transform: translateY(0);
@@ -1315,5 +1354,11 @@ h3 {
   .modal {
     max-height: min(91svh, 740px);
     border-radius: 22px 22px 0 0;
+  }
+
+  .update-prompt {
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    width: calc(100vw - 24px);
   }
 }
