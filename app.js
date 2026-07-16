@@ -1005,7 +1005,7 @@
       "</label>" +
       (entry.virtual || entry.cadence === "payday"
         ? '<div class="date-input" aria-label="Verwachte datum">' +
-          escapeHtml(entry.cadence === "payday" ? formatFullDate(entry.occurrence) : formatShortDate(entry.occurrence)) +
+          escapeHtml(formatShortDate(entry.occurrence)) +
           "</div>"
         : '<input class="date-input" id="date-' +
           itemId +
