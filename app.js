@@ -1716,8 +1716,10 @@
             });
           });
 
+          registration.update().catch(() => {});
+
           window.addEventListener("focus", () => {
-            registration.update();
+            registration.update().catch(() => {});
           });
         })
         .catch(() => {
