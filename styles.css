@@ -790,6 +790,9 @@ h3 {
 }
 
 .date-input {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
   min-width: 0;
   min-height: 35px;
@@ -799,6 +802,7 @@ h3 {
   background: var(--surface);
   color: var(--ink);
   font-size: 12px;
+  text-align: center;
 }
 
 .planning-main {
