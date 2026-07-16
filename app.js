@@ -1128,7 +1128,7 @@
       (!state.data.settings.rbcTransferEnabled ? " selected" : "") +
       '>Nee, niet meenemen</option><option value="true"' +
       (state.data.settings.rbcTransferEnabled ? " selected" : "") +
-      ">Ja, als verwacht inkomen</option></select></div><div class=\"form-field\"><label for=\"rbc-amount\">Bedrag</label><input id=\"rbc-amount\" name=\"rbcAmount\" type=\"number\" min=\"0\" inputmode=\"decimal\" step=\"0.01\" value=\"" +
+      ">Ja, als verwacht inkomen</option></select></div><div class=\"form-field\"><label for=\"rbc-amount\">Bedrag</label><input id=\"rbc-amount\" name=\"rbcAmount\" type=\"text\" inputmode=\"decimal\" value=\"" +
       escapeHtml(state.data.settings.rbcTransferAmount) +
       '"></div><div class="form-field"><label for="rbc-date">Verwachte datum</label><input id="rbc-date" name="rbcDate" type="date" value="' +
       escapeHtml(rbcDate ? dateInputValue(rbcDate) : dateInputValue(new Date())) +
@@ -1235,7 +1235,7 @@
       (existing && existing.type === "income" ? " selected" : "") +
       ">Inkomst</option><option value=\"saving\"" +
       (existing && existing.type === "saving" ? " selected" : "") +
-      ">Spaaroverboeking</option></select></div><div class=\"form-field\"><label for=\"item-amount\">Bedrag</label><input id=\"item-amount\" name=\"amount\" required type=\"number\" min=\"0.01\" inputmode=\"decimal\" step=\"0.01\" value=\"" +
+      ">Spaaroverboeking</option></select></div><div class=\"form-field\"><label for=\"item-amount\">Bedrag</label><input id=\"item-amount\" name=\"amount\" required type=\"text\" inputmode=\"decimal\" value=\"" +
       escapeHtml(existing ? existing.amount : "") +
       '"></div><div class="form-field"><label for="item-account">Rekening</label><select id="item-account" name="account"><option value="rabobank"' +
       (existing && existing.account === "rabobank" ? " selected" : "") +
