@@ -39,7 +39,7 @@
   const modalRoot = document.getElementById("modal-root");
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
-  const APP_VERSION = "v6";
+  const APP_VERSION = "v7";
   const PREFILL_REVISION = "financial-overview-v4-adjusted";
   const WORKBOOK_PREFILL = {
     items: [
