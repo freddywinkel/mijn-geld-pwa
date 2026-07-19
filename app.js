@@ -39,6 +39,7 @@
   const modalRoot = document.getElementById("modal-root");
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
+  const APP_VERSION = "v5";
   const PREFILL_REVISION = "financial-overview-v4-adjusted";
   const WORKBOOK_PREFILL = {
     items: [
@@ -347,6 +348,8 @@
     activeView: "dashboard",
     deferredInstallPrompt: null,
     waitingServiceWorker: null,
+    serviceWorkerRegistration: null,
+    isCheckingForUpdates: false,
     isUpdating: false
   };
 
@@ -1135,6 +1138,13 @@
       '"></div></div><div class="form-actions"><button class="button button-primary" type="submit">Opslaan</button></div></form></section>' +
       '<section class="panel settings-panel full"><h2>Zo wordt je budget berekend</h2><ul class="info-list"><li><span>1</span><div>De cyclus start op de 25e. Als de 25e op zaterdag of zondag valt, start hij op de vrijdag ervoor.</div></li><li><span>2</span><div>Van je actuele Rabobank- en Bunq-saldo worden alle nog niet-betaalde uitgaven en geplande spaaroverboekingen afgetrokken.</div></li><li><span>3</span><div>Niet-ontvangen inkomsten worden erbij opgeteld. Je spaarpotjes blijven apart en tellen niet mee als vrij besteedbaar geld.</div></li><li><span>4</span><div>Wanneer een bedrag echt is verwerkt, werk je saldo bij en markeer je de post als betaald of ontvangen om dubbel tellen te voorkomen.</div></li></ul></section>' +
       '<section class="panel settings-panel"><h2>Reservekopie</h2><p class="section-copy">Bewaar een kopie voordat je van telefoon of browser wisselt.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="export-data">Exporteer gegevens</button><label class="button button-secondary" for="import-file">Importeer gegevens</label><input class="is-hidden" id="import-file" type="file" accept="application/json" data-action="import-data"></div></section>' +
+      '<section class="panel settings-panel"><h2>App-update</h2><p class="section-copy">Controleer handmatig of er een nieuwe versie van Mijn Geld klaarstaat. Je lokale gegevens blijven bewaard.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="check-for-updates"' +
+      (state.isCheckingForUpdates ? " disabled" : "") +
+      '>' +
+      (state.isCheckingForUpdates ? "Controleren…" : "Controleer op updates") +
+      '</button><span class="version-label">Versie ' +
+      APP_VERSION +
+      "</span></div></section>" +
       '<section class="panel settings-panel"><h2>Opnieuw beginnen</h2><p class="section-copy">Dit wist alleen de lokale gegevens in deze app. Je bankgegevens blijven onaangeraakt.</p><div class="form-actions"><button class="button button-danger" type="button" data-action="clear-data">Lokale gegevens wissen</button></div></section></div></section>'
     );
   }
@@ -1322,6 +1332,47 @@
     state.waitingServiceWorker.postMessage({ type: "SKIP_WAITING" });
   }
 
+  async function checkForAppUpdate() {
+    if (state.isCheckingForUpdates) {
+      return;
+    }
+
+    if (!("serviceWorker" in navigator)) {
+      showToast("Updatecontrole wordt niet ondersteund in deze browser.");
+      return;
+    }
+
+    state.isCheckingForUpdates = true;
+    render();
+
+    try {
+      const registration =
+        state.serviceWorkerRegistration ||
+        (await navigator.serviceWorker.getRegistration("./"));
+
+      if (!registration) {
+        showToast("Open Mijn Geld via de geïnstalleerde app of website om updates te controleren.");
+        return;
+      }
+
+      state.serviceWorkerRegistration = registration;
+      await registration.update();
+
+      if (registration.waiting && navigator.serviceWorker.controller) {
+        showUpdatePrompt(registration.waiting);
+      } else {
+        showToast("Je gebruikt de nieuwste versie van Mijn Geld.");
+      }
+    } catch (error) {
+      showToast("Updatecontrole mislukt. Controleer je internetverbinding en probeer opnieuw.");
+    } finally {
+      state.isCheckingForUpdates = false;
+      if (state.activeView === "settings") {
+        render();
+      }
+    }
+  }
+
   function showToast(message) {
     toast.textContent = message;
     toast.classList.add("is-visible");
@@ -1450,6 +1501,10 @@
     }
     if (action === "export-data") {
       exportData();
+      return;
+    }
+    if (action === "check-for-updates") {
+      checkForAppUpdate();
       return;
     }
     if (action === "clear-data") {
@@ -1696,6 +1751,7 @@
       navigator.serviceWorker
         .register("./service-worker.js")
         .then((registration) => {
+          state.serviceWorkerRegistration = registration;
           if (registration.waiting && navigator.serviceWorker.controller) {
             showUpdatePrompt(registration.waiting);
           }

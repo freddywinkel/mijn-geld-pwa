@@ -24,12 +24,15 @@
 
 html {
   background: var(--canvas);
+  overflow-x: clip;
 }
 
 body {
-  min-width: 320px;
+  min-width: 0;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
+  overflow-x: clip;
   background:
     radial-gradient(circle at 76% -10%, rgba(223, 240, 185, 0.55), transparent 32rem),
     var(--canvas);
@@ -57,6 +60,8 @@ select:focus-visible {
   display: grid;
   grid-template-columns: 254px minmax(0, 1fr);
   min-height: 100svh;
+  min-height: 100dvh;
+  min-width: 0;
 }
 
 .sidebar {
@@ -795,7 +800,8 @@ h3 {
   justify-content: center;
   width: 100%;
   min-width: 0;
-  min-height: 35px;
+  height: 43px;
+  min-height: 43px;
   padding: 0 7px;
   border: 1px solid var(--line);
   border-radius: 9px;
@@ -806,6 +812,12 @@ h3 {
 }
 
 .planning-main {
+  min-width: 0;
+}
+
+.planning-row > *,
+.planning-date,
+.planning-actions {
   min-width: 0;
 }
 
@@ -1009,6 +1021,20 @@ h3 {
   border-radius: 11px;
   background: #ffffff;
   color: var(--ink);
+}
+
+.form-field input[type="date"] {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.version-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 40px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 700;
 }
 
 .form-field input:disabled,
@@ -1244,6 +1270,7 @@ h3 {
 
   .app-main {
     padding: 29px 18px calc(86px + env(safe-area-inset-bottom));
+    overflow-x: clip;
   }
 
   .page-header {
@@ -1298,7 +1325,7 @@ h3 {
 
   .planning-date {
     grid-row: 2;
-    grid-column: 1;
+    grid-column: 1 / -1;
   }
 
   .planning-amount {
@@ -1307,8 +1334,19 @@ h3 {
   }
 
   .planning-actions {
-    grid-row: 2;
-    grid-column: 2;
+    grid-row: 3;
+    grid-column: 1 / -1;
+    width: 100%;
+  }
+
+  .planning-actions .status-button {
+    flex: 1 1 auto;
+    min-width: 0;
+    white-space: nowrap;
+  }
+
+  .planning-actions .icon-button {
+    flex: 0 0 34px;
   }
 
   .planning-main {
@@ -1323,6 +1361,12 @@ h3 {
 
   .settings-panel.full {
     grid-column: auto;
+  }
+
+  .toast {
+    right: 12px;
+    bottom: calc(76px + env(safe-area-inset-bottom));
+    max-width: calc(100vw - 24px);
   }
 }
 
@@ -1361,8 +1405,29 @@ h3 {
   }
 
   .update-prompt {
+    display: block;
     right: 12px;
     bottom: calc(76px + env(safe-area-inset-bottom));
     width: calc(100vw - 24px);
+  }
+
+  .update-prompt__actions {
+    margin-top: 11px;
+  }
+
+  .update-prompt__actions .button {
+    flex: 1 1 0;
+  }
+
+  .form-actions .button,
+  .form-actions > label.button {
+    flex: 1 1 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .version-label {
+    width: 100%;
+    justify-content: center;
   }
 }
