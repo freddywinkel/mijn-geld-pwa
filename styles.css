@@ -1298,10 +1298,16 @@ h3 {
   }
 
   .budget-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 9px;
   }
 
+  .budget-card:last-child {
+    grid-column: 1 / -1;
+  }
+
   .budget-card {
+    min-width: 0;
     padding: 14px 11px;
   }
 
