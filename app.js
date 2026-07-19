@@ -39,7 +39,7 @@
   const modalRoot = document.getElementById("modal-root");
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
-  const APP_VERSION = "v5";
+  const APP_VERSION = "v6";
   const PREFILL_REVISION = "financial-overview-v4-adjusted";
   const WORKBOOK_PREFILL = {
     items: [
@@ -1120,7 +1120,7 @@
       ? '<section class="quick-start"><div><strong>Werkbladgegevens zijn toegevoegd</strong><p>Je vaste lasten, inkomsten en spaarinleg komen uit Financial_Overview_v4_adjusted. De exacte aftrekdatums stonden niet in het werkblad en staan daarom voorlopig op de 1e; pas ze aan in Planning.</p></div><button class="button button-secondary button-small" type="button" data-action="dismiss-prefill-notice">Begrepen</button></section>'
       : "";
     return (
-      '<section><header class="page-header"><div><p class="eyebrow">Privé & offline</p><h1>Instellingen</h1><p class="subtle">Je gegevens worden alleen lokaal in deze browser opgeslagen. Er is geen bankkoppeling en geen account nodig.</p></div><div class="header-actions"><button class="button button-secondary" type="button" data-action="install-app">Installeer app</button></div></header>' +
+      '<section><header class="page-header"><div><p class="eyebrow">Privé & offline</p><h1>Instellingen</h1><p class="subtle">Je gegevens worden alleen lokaal in deze browser opgeslagen. Er is geen bankkoppeling en geen account nodig.</p></div></header>' +
       prefillNotice +
       '<div class="settings-grid"><section class="panel settings-panel"><h2>Actuele saldo&apos;s</h2><p class="section-copy">Vul in wat er nu werkelijk op je rekeningen staat.</p><form id="settings-balance-form"><div class="field-grid"><div class="form-field"><label for="setting-rabobank">Rabobank</label><input id="setting-rabobank" name="rabobank" type="number" inputmode="decimal" step="0.01" value="' +
       escapeHtml(state.data.balances.rabobank) +
