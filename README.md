@@ -4,15 +4,15 @@ Een volledig offline PWA voor een rustig overzicht van je betaalmaand, openstaan
 
 ## Wat de app doet
 
-- De betaalmaand begint op de 25e; valt die dag in het weekend, dan begint hij op de vrijdag ervoor.
-- Het dashboard toont per volledige betaalmaand de totale inkomsten, uitgaven, spaarinleg, het ingevulde spaarsaldo en wat vrij te besteden is.
-- Je vult de actuele saldi van Rabobank en Bunq zelf in.
+- Je kiest zelf je salarisdag; valt die dag in het weekend, dan begint de betaalmaand op de vrijdag ervoor.
+- Het dashboard begint met wat nu beschikbaar is en toont daaronder openstaande posten, rekeningprognoses en de planning voor de volledige betaalmaand.
+- Je geeft twee rekeningen zelf een herkenbare naam en vult de actuele saldi handmatig in.
 - Niet-betaalde uitgaven en spaaroverboekingen worden afgetrokken; verwachte inkomsten worden opgeteld.
 - Planning groepeert inkomsten apart van uitgaven en spaarinleg, met een eigen totaal per groep.
-- De app toont wat vrij te besteden is tot de volgende salarisdag, plus een gemiddeld budget per dag, twee dagen en week.
-- Rabobank is bedoeld voor vaste lasten. Bunq is voor besteedbaar geld en losse spaarpotjes.
-- De eerste setup bevat de terugkerende inkomsten, uitgaven, abonnementen en maandelijkse spaarinleg uit het financiële werkblad. Controleer bedragen en datums in Planning; wijzigingen worden niet automatisch bijgewerkt.
-- Je kunt een eenmalige extra inkomst instellen met een eigen naam, bedrag, datum en doelrekening. Wanneer ze is ingeschakeld, telt ze mee in de inkomsten, rekeningprognose en overzichtstotalen.
+- De app toont wat vrij te besteden is tot de volgende salarisdag, plus een budget per dag, twee dagen en maximaal zeven dagen. Die korte periodes worden nooit hoger dan het totaal dat nog resteert.
+- Een nieuwe installatie begint leeg en bevat geen persoonlijke voorbeeldbedragen. De korte checklist helpt met saldi, inkomsten en uitgaven.
+- Je kunt een eenmalig extra inkomen instellen met een eigen naam, bedrag, datum en doelrekening. Het kan net als andere inkomsten als ontvangen worden gemarkeerd.
+- Verouderde of toekomstige eenmalige posten blijven via Planning te beheren, ook als ze buiten de huidige betaalmaand vallen.
 - Alle gegevens staan uitsluitend in de browser op dit apparaat. Via Instellingen kun je een reservekopie exporteren.
 - Nieuwe app-versies worden gemeld met een updatekaart. Je kunt de update toepassen zonder je lokale gegevens kwijt te raken.
 
@@ -22,10 +22,10 @@ Open de map met een eenvoudige lokale webserver, bijvoorbeeld:
 
     python -m http.server 8080
 
-Ga daarna naar http://localhost:8080/finances-pwa/. Voor de offline-installatie moet de app via een webserver of HTTPS worden geopend, niet via een lokaal bestandspad.
+Ga daarna naar http://localhost:8080/. Voor de offline-installatie moet de app via een webserver of HTTPS worden geopend, niet via een lokaal bestandspad.
 
 ## Dagelijks gebruik
 
-1. Vul eerst je actuele Rabobank- en Bunq-saldo in.
+1. Geef je rekeningen een naam, kies je salarisdag en vul de actuele saldi in.
 2. Voeg je vaste lasten, inkomsten, losse uitgaven en geplande spaaroverboekingen toe.
 3. Werk je echte banksaldo bij wanneer er iets is af- of bijgeschreven en markeer de post daarna als betaald of ontvangen. Zo wordt niets dubbel geteld.

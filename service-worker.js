@@ -1,10 +1,14 @@
-const CACHE_NAME = "mijn-geld-v12";
+const CACHE_NAME = "mijn-geld-v13";
 const APP_SHELL = [
   "./",
   "./index.html",
   "./styles.css",
   "./app.js",
   "./manifest.webmanifest",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./apple-touch-icon.png",
+  "./icon-maskable.svg",
   "./icon.svg"
 ];
 
@@ -13,9 +17,12 @@ self.addEventListener("install", (event) => {
     caches.open(CACHE_NAME).then((cache) =>
       Promise.all(
         APP_SHELL.map((url) =>
-          fetch(new Request(url, { cache: "reload" })).then((response) =>
-            cache.put(url, response)
-          )
+          fetch(new Request(url, { cache: "reload" })).then((response) => {
+            if (!response.ok) {
+              throw new Error("App-shellbestand ontbreekt: " + url);
+            }
+            return cache.put(url, response);
+          })
         )
       )
     )
@@ -50,8 +57,10 @@ self.addEventListener("fetch", (event) => {
 
       return fetch(event.request)
         .then((response) => {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          if (response.ok) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, responseClone));
+          }
           return response;
         })
         .catch(() => {
