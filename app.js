@@ -9,12 +9,18 @@
   const TYPE_LABELS = {
     expense: "Uitgave",
     income: "Inkomst",
-    saving: "Sparen"
+    saving: "Spaarinleg"
   };
   const TYPE_CLASSES = {
     expense: "expense",
     income: "income",
     saving: "saving"
+  };
+  const ICONS = {
+    edit: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg>',
+    remove: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>',
+    wallet: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7.8A2.8 2.8 0 0 1 5.8 5H18"></path><path d="M16 12h5v5h-5a2.5 2.5 0 0 1 0-5Z"></path></svg>',
+    close: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>'
   };
   const moneyFormatter = new Intl.NumberFormat("nl-NL", {
     style: "currency",
@@ -39,8 +45,13 @@
   const modalRoot = document.getElementById("modal-root");
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
-  const APP_VERSION = "v8";
+  const APP_VERSION = "v10";
   const PREFILL_REVISION = "financial-overview-v4-adjusted";
+  const PREFILL_ADDITIONS_REVISION = "financial-overview-v4-dates-expenses";
+  const PREFILL_ADDITION_SOURCE_KEYS = new Set([
+    "workbook:wnf-donation",
+    "workbook:rabobank-services"
+  ]);
   const WORKBOOK_PREFILL = {
     items: [
       {
@@ -121,6 +132,30 @@
         name: "Mobiele verzekering (Chubb)",
         type: "expense",
         amount: 15.95,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 1,
+        date: "2026-01-01",
+        jarId: ""
+      },
+      {
+        id: "workbook-wnf-donation",
+        sourceKey: "workbook:wnf-donation",
+        name: "WNF-donatie",
+        type: "expense",
+        amount: 3,
+        account: "rabobank",
+        cadence: "monthly",
+        dayOfMonth: 28,
+        date: "2026-01-28",
+        jarId: ""
+      },
+      {
+        id: "workbook-rabobank-services",
+        sourceKey: "workbook:rabobank-services",
+        name: "Rabobank-betaalpakket",
+        type: "expense",
+        amount: 6.5,
         account: "rabobank",
         cadence: "monthly",
         dayOfMonth: 1,
@@ -405,31 +440,70 @@
   }
 
   function applyWorkbookPrefill(data) {
-    if (data.prefillRevision === PREFILL_REVISION) {
-      return data;
-    }
-
+    const wasIntentionallyBlank =
+      data.prefillRevision === PREFILL_REVISION &&
+      data.items.length === 0 &&
+      data.savingsJars.length === 0;
     const existingSourceKeys = new Set(
       data.items.map((item) => item.sourceKey).filter(Boolean)
     );
-    WORKBOOK_PREFILL.items.forEach((item) => {
-      if (!existingSourceKeys.has(item.sourceKey)) {
-        data.items.push({ ...item });
-      }
-    });
+    const itemSignature = (item) =>
+      [
+        String(item.name || "").trim().toLocaleLowerCase("nl-NL"),
+        item.type,
+        numberValue(item.amount, 0).toFixed(2),
+        item.account
+      ].join("|");
+    const existingItemSignatures = new Set(data.items.map(itemSignature));
 
-    const existingJarKeys = new Set(
-      data.savingsJars.map((jar) => jar.sourceKey).filter(Boolean)
-    );
-    WORKBOOK_PREFILL.savingsJars.forEach((jar) => {
-      if (!existingJarKeys.has(jar.sourceKey)) {
-        data.savingsJars.push({ ...jar });
+    const addMissingItems = (items) => {
+      let addedCount = 0;
+      items.forEach((item) => {
+        const signature = itemSignature(item);
+        if (
+          !existingSourceKeys.has(item.sourceKey) &&
+          !existingItemSignatures.has(signature)
+        ) {
+          data.items.push({ ...item });
+          existingSourceKeys.add(item.sourceKey);
+          existingItemSignatures.add(signature);
+          addedCount += 1;
+        }
+      });
+      return addedCount;
+    };
+
+    if (data.prefillRevision !== PREFILL_REVISION) {
+      addMissingItems(WORKBOOK_PREFILL.items);
+
+      const existingJarKeys = new Set(
+        data.savingsJars.map((jar) => jar.sourceKey).filter(Boolean)
+      );
+      WORKBOOK_PREFILL.savingsJars.forEach((jar) => {
+        if (!existingJarKeys.has(jar.sourceKey)) {
+          data.savingsJars.push({ ...jar });
+        }
+      });
+
+      data.prefillRevision = PREFILL_REVISION;
+      data.settings.dateReviewNotice = true;
+    }
+
+    if (data.prefillAdditionsRevision !== PREFILL_ADDITIONS_REVISION) {
+      if (!wasIntentionallyBlank) {
+        const addedCount = addMissingItems(
+          WORKBOOK_PREFILL.items.filter((item) =>
+            PREFILL_ADDITION_SOURCE_KEYS.has(item.sourceKey)
+          )
+        );
+        if (addedCount > 0) {
+          data.settings.dateReviewNotice = true;
+        }
       }
-    });
+      data.prefillAdditionsRevision = PREFILL_ADDITIONS_REVISION;
+    }
 
     data.version = 2;
-    data.prefillRevision = PREFILL_REVISION;
-    data.settings.dateReviewNotice = true;
     return data;
   }
 
@@ -440,6 +514,7 @@
   function getBlankData() {
     const data = getBaseData();
     data.prefillRevision = PREFILL_REVISION;
+    data.prefillAdditionsRevision = PREFILL_ADDITIONS_REVISION;
     data.settings.dateReviewNotice = false;
     return data;
   }
@@ -494,6 +569,10 @@
 
     return applyWorkbookPrefill({
       version: 2,
+      prefillRevision: rawData.prefillRevision ? String(rawData.prefillRevision) : "",
+      prefillAdditionsRevision: rawData.prefillAdditionsRevision
+        ? String(rawData.prefillAdditionsRevision)
+        : "",
       hasSetBalances: Boolean(rawData.hasSetBalances),
       balances: {
         rabobank: numberValue(rawData.balances && rawData.balances.rabobank, 0),
@@ -689,6 +768,17 @@
     const cycle = getBudgetCycle();
     const entries = getCycleEntries(cycle);
     const unpaidEntries = entries.filter((entry) => !entry.paid);
+    const cycleIncomeTotal = entries
+      .filter((entry) => entry.type === "income")
+      .reduce((total, entry) => total + entry.amount, 0);
+    const cycleExpenseTotal = entries
+      .filter((entry) => entry.type === "expense")
+      .reduce((total, entry) => total + entry.amount, 0);
+    const cycleSavingsContribution = entries
+      .filter((entry) => entry.type === "saving")
+      .reduce((total, entry) => total + entry.amount, 0);
+    const cycleOutflowTotal = cycleExpenseTotal + cycleSavingsContribution;
+    const cycleSpendable = cycleIncomeTotal - cycleOutflowTotal;
     const balances = {
       rabobank: numberValue(state.data.balances.rabobank, 0),
       bunq: numberValue(state.data.balances.bunq, 0)
@@ -719,7 +809,7 @@
     const outstandingOutgoings = outgoingByAccount.rabobank + outgoingByAccount.bunq;
     const expectedIncome = incomeByAccount.rabobank + incomeByAccount.bunq;
     const safeToSpend = forecastByAccount.rabobank + forecastByAccount.bunq;
-    const savingsTotal = state.data.savingsJars.reduce(
+    const savingsBalance = state.data.savingsJars.reduce(
       (total, jar) => total + numberValue(jar.balance, 0),
       0
     );
@@ -728,6 +818,11 @@
       cycle,
       entries,
       unpaidEntries,
+      cycleIncomeTotal,
+      cycleExpenseTotal,
+      cycleSavingsContribution,
+      cycleOutflowTotal,
+      cycleSpendable,
       balances,
       forecastByAccount,
       outgoingByAccount,
@@ -735,7 +830,7 @@
       outstandingOutgoings,
       expectedIncome,
       safeToSpend,
-      savingsTotal,
+      savingsBalance,
       perDay: safeToSpend / cycle.daysLeft,
       perTwoDays: (safeToSpend / cycle.daysLeft) * 2,
       perWeek: (safeToSpend / cycle.daysLeft) * 7
@@ -854,10 +949,16 @@
     const outgoing = calculation.outgoingByAccount[account];
     const income = calculation.incomeByAccount[account];
     const forecast = calculation.forecastByAccount[account];
-    const isRabo = account === "rabobank";
-    const forecastText =
-      (income ? "+" + formatMoney(income) + " inkomen · " : "") +
-      (outgoing ? "−" + formatMoney(outgoing) + " nog af" : "geen openstaande posten");
+    const forecastParts = [];
+    if (income) {
+      forecastParts.push("+" + formatMoney(income) + " nog te ontvangen");
+    }
+    if (outgoing) {
+      forecastParts.push("−" + formatMoney(outgoing) + " nog uitgaand");
+    }
+    const forecastText = forecastParts.length
+      ? forecastParts.join(" · ")
+      : "geen openstaande posten";
 
     return (
       '<article class="account-card">' +
@@ -865,7 +966,7 @@
       ACCOUNT_LABELS[account] +
       '</h3><button class="text-button" type="button" data-action="open-balance-modal">Wijzig</button></div>' +
       '<p class="account-label">' +
-      (isRabo ? "Vaste lasten" : "Besteedbaar geld") +
+      "Huidig saldo" +
       "</p>" +
       '<div class="account-balance">' +
       formatMoney(currentBalance) +
@@ -875,6 +976,37 @@
       "</span><strong>" +
       formatMoney(forecast) +
       "</strong></div></article>"
+    );
+  }
+
+  function renderPaydayMonthSummary(calculation) {
+    return (
+      '<section class="payday-summary" aria-labelledby="payday-summary-title">' +
+      '<div class="payday-summary-heading"><div><p class="eyebrow">Overzicht per betaalmaand</p><h2 id="payday-summary-title">Van salaris tot salaris</h2><p class="section-copy">Volledige planning voor ' +
+      escapeHtml(formatCycle(calculation.cycle)) +
+      ". Reeds verwerkte posten blijven in deze maandtotalen staan.</p></div><span class=\"cycle-pill\">" +
+      escapeHtml(formatCycle(calculation.cycle)) +
+      "</span></div>" +
+      '<div class="payday-summary-grid">' +
+      '<article class="payday-total-card"><p>Totale inkomsten</p><strong>' +
+      formatMoney(calculation.cycleIncomeTotal) +
+      '</strong><small>alle inkomsten in deze betaalmaand</small></article>' +
+      '<article class="payday-total-card"><p>Totale uitgaven</p><strong>' +
+      formatMoney(calculation.cycleExpenseTotal) +
+      '</strong><small>vaste lasten en overige uitgaven</small></article>' +
+      '<article class="payday-total-card"><p>Spaarinleg deze betaalmaand</p><strong>' +
+      formatMoney(calculation.cycleSavingsContribution) +
+      '</strong><small>totaal in spaarpotjes: ' +
+      formatMoney(calculation.savingsBalance) +
+      "</small></article>" +
+      '<article class="payday-total-card is-highlight"><p>Vrij te besteden</p><strong class="' +
+      valueClass(calculation.cycleSpendable) +
+      '">' +
+      formatMoney(calculation.cycleSpendable) +
+      '</strong><small>na uitgaven en spaarinleg: ' +
+      formatMoney(calculation.cycleOutflowTotal) +
+      "</small></article>" +
+      "</div></section>"
     );
   }
 
@@ -890,7 +1022,7 @@
 
     return (
       '<section>' +
-      '<header class="page-header"><div><p class="eyebrow">Betaalcyclus</p><h1>' +
+      '<header class="page-header"><div><p class="eyebrow">Betaalmaand</p><h1>' +
       greeting +
       ".</h1>" +
       '<p class="subtle">Van ' +
@@ -900,7 +1032,8 @@
       ".</p></div>" +
       '<div class="header-actions"><button class="button button-secondary" type="button" data-action="open-balance-modal">Saldi bijwerken</button><button class="button button-primary" type="button" data-action="open-item-modal">+ Post toevoegen</button></div></header>' +
       quickStart +
-      '<div class="hero-grid"><article class="hero-card"><p class="hero-label">Vrij te besteden tot je salaris</p><p class="hero-amount ' +
+      renderPaydayMonthSummary(calculation) +
+      '<div class="hero-grid"><article class="hero-card"><p class="hero-label">Actueel beschikbaar tot je volgende salaris</p><p class="hero-amount ' +
       safeClass +
       '">' +
       formatMoney(calculation.safeToSpend) +
@@ -908,8 +1041,8 @@
       calculation.cycle.daysLeft +
       " " +
       (calculation.cycle.daysLeft === 1 ? "dag" : "dagen") +
-      ' te gaan</strong><span class="hero-dot"></span><span>na alle openstaande posten</span></div></article>' +
-      '<article class="cycle-card"><div><p>Deze cyclus</p><strong>' +
+      ' te gaan</strong><span class="hero-dot"></span><span>op basis van je saldi en openstaande posten</span></div></article>' +
+      '<article class="cycle-card"><div><p>Deze betaalmaand</p><strong>' +
       escapeHtml(formatCycle(calculation.cycle)) +
       '</strong><p class="cycle-days">' +
       calculation.cycle.daysLeft +
@@ -917,30 +1050,30 @@
       calculation.cycle.elapsedPercent +
       '%\"></div></div><small>' +
       calculation.cycle.elapsedPercent +
-      "% van je betaalcyclus is voorbij</small></div></article></div>" +
-      '<div class="budget-grid"><article class="budget-card"><p>Gemiddeld per dag</p><strong class="' +
+      "% van je betaalmaand is voorbij</small></div></article></div>" +
+      '<div class="budget-grid"><article class="budget-card"><p>Actueel per dag</p><strong class="' +
       safeClass +
       '">' +
       formatMoney(calculation.perDay) +
       "</strong><small>tot je volgende salaris</small></article>" +
-      '<article class="budget-card"><p>Gemiddeld per 2 dagen</p><strong class="' +
+      '<article class="budget-card"><p>Actueel per 2 dagen</p><strong class="' +
       safeClass +
       '">' +
       formatMoney(calculation.perTwoDays) +
       "</strong><small>twee keer je dagbudget</small></article>" +
-      '<article class="budget-card"><p>Gemiddeld per week</p><strong class="' +
+      '<article class="budget-card"><p>Actueel per week</p><strong class="' +
       safeClass +
       '">' +
       formatMoney(calculation.perWeek) +
       "</strong><small>zeven keer je dagbudget</small></article></div>" +
-      '<div class="content-grid"><section class="panel"><header class="panel-header"><div><h2>Nog af te schrijven</h2><p class="section-copy">' +
+      '<div class="content-grid"><section class="panel"><header class="panel-header"><div><h2>Nog te betalen of over te boeken</h2><p class="section-copy">' +
       formatMoney(calculation.outstandingOutgoings) +
       " staat nog gepland.</p></div><button class=\"text-button\" type=\"button\" data-action=\"goto-planning\">Alles bekijken</button></header><div class=\"panel-body\">" +
-      renderOverviewRows(outgoingEntries, "Nog geen uitgaven of spaaroverboekingen in deze cyclus.") +
+      renderOverviewRows(outgoingEntries, "Nog geen uitgaven of spaaroverboekingen in deze betaalmaand.") +
       "</div></section>" +
-      '<div class="stack"><section class="panel"><header class="panel-header"><div><h2>Verwachte inkomsten</h2><p class="section-copy">' +
+      '<div class="stack"><section class="panel"><header class="panel-header"><div><h2>Nog te ontvangen inkomsten</h2><p class="section-copy">' +
       formatMoney(calculation.expectedIncome) +
-      " wordt meegerekend.</p></div></header><div class=\"panel-body\">" +
+      " staat nog open.</p></div></header><div class=\"panel-body\">" +
       renderOverviewRows(incomeEntries, "Nog geen verwachte inkomsten ingepland.") +
       "</div></section>" +
       '<section class="panel"><header class="panel-header"><div><h2>Rekeningen</h2><p class="section-copy">Actueel saldo en verwachte eindstand.</p></div></header><div class="panel-body"><div class="account-grid">' +
@@ -966,6 +1099,7 @@
 
   function renderPlanningRow(entry, cycle) {
     const isIncome = entry.type === "income";
+    const isSaving = entry.type === "saving";
     const cadenceText = entry.virtual
       ? "optioneel"
       : entry.cadence === "payday"
@@ -982,7 +1116,17 @@
         '" type="button" data-action="toggle-paid" data-id="' +
         itemId +
         '">' +
-        (entry.paid ? "Betaald" : isIncome ? "Ontvangen?" : "Betaald?") +
+        (isIncome
+          ? entry.paid
+            ? "Ontvangen"
+            : "Ontvangen?"
+          : isSaving
+            ? entry.paid
+              ? "Overgeboekt"
+              : "Overgeboekt?"
+            : entry.paid
+              ? "Betaald"
+              : "Betaald?") +
         "</button>";
     const controls = entry.virtual
       ? paidButton
@@ -991,11 +1135,11 @@
         escapeHtml(entry.name) +
         '" type="button" data-action="edit-item" data-id="' +
         itemId +
-        '">✎</button><button class="icon-button" title="Verwijder post" aria-label="Verwijder ' +
+        '">' + ICONS.edit + '</button><button class="icon-button" title="Verwijder post" aria-label="Verwijder ' +
         escapeHtml(entry.name) +
         '" type="button" data-action="delete-item" data-id="' +
         itemId +
-        '">×</button>';
+        '">' + ICONS.remove + '</button>';
 
     return (
       '<article class="planning-row ' +
@@ -1004,7 +1148,7 @@
       '<div class="planning-date"><label for="date-' +
       itemId +
       '">' +
-      (entry.type === "income" ? "Ontvangstdatum" : "Aftrekdatum") +
+      (isIncome ? "Ontvangstdatum" : isSaving ? "Overboekingsdatum" : "Betaaldatum") +
       "</label>" +
       (entry.virtual || entry.cadence === "payday"
         ? '<div class="date-input" aria-label="Verwachte datum">' +
@@ -1046,13 +1190,13 @@
       : '<div class="panel"><div class="empty-state"><div><p>Je planning is nog leeg. Voeg vaste lasten, inkomsten, losse uitgaven of geplande spaaroverboekingen toe.</p><button class="button button-primary" type="button" data-action="open-item-modal">Eerste post toevoegen</button></div></div></div>';
 
     return (
-      '<section><header class="page-header"><div><p class="eyebrow">Aftrekdatums</p><h1>Planning</h1><p class="subtle">Alle posten tussen ' +
+      '<section><header class="page-header"><div><p class="eyebrow">Betaal-, overboekings- en ontvangstdatums</p><h1>Planning</h1><p class="subtle">Alle posten tussen ' +
       escapeHtml(formatCycle(calculation.cycle)) +
       '. Verander de datum hier direct; maandelijkse posten houden daarna die dag van de maand aan.</p></div><div class="header-actions"><span class="cycle-pill">' +
       escapeHtml(formatCycle(calculation.cycle)) +
       '</span><button class="button button-primary" type="button" data-action="open-item-modal">+ Nieuwe post</button></div></header>' +
       rows +
-      '<div class="panel" style="margin-top: 18px;"><div class="panel-body"><p class="helper-copy">Tip: werk eerst je echte rekening-saldo bij zodra iets is afgeschreven of ontvangen. Markeer de post daarna als betaald of ontvangen, zodat deze niet nogmaals wordt meegerekend.</p></div></div></section>'
+      '<div class="panel" style="margin-top: 18px;"><div class="panel-body"><p class="helper-copy">Tip: werk eerst je echte rekeningsaldo bij zodra iets is afgeschreven, overgeboekt of ontvangen. Markeer de post daarna als betaald, overgeboekt of ontvangen, zodat deze niet nogmaals wordt meegerekend.</p></div></div></section>'
     );
   }
 
@@ -1070,7 +1214,7 @@
       : "Geen doelbedrag ingesteld";
 
     return (
-      '<article class="jar-card"><div class="jar-icon" aria-hidden="true">◌</div><h2>' +
+      '<article class="jar-card"><div class="jar-icon" aria-hidden="true">' + ICONS.wallet + '</div><h2>' +
       escapeHtml(jar.name) +
       '</h2><p class="section-copy">' +
       escapeHtml(targetText) +
@@ -1086,11 +1230,11 @@
       escapeHtml(jar.name) +
       '" type="button" data-action="edit-jar" data-id="' +
       escapeHtml(jar.id) +
-      '">✎</button><button class="icon-button" aria-label="Verwijder ' +
+      '">' + ICONS.edit + '</button><button class="icon-button" aria-label="Verwijder ' +
       escapeHtml(jar.name) +
       '" type="button" data-action="delete-jar" data-id="' +
       escapeHtml(jar.id) +
-      '">×</button></div></div></article>'
+      '">' + ICONS.remove + '</button></div></div></article>'
     );
   }
 
@@ -1100,15 +1244,15 @@
       : '<section class="panel"><div class="empty-state"><div><p>Maak een potje voor ieder spaardoel dat je apart wilt zien. Het geld in je potjes telt niet mee als vrij besteedbaar.</p><button class="button button-primary" type="button" data-action="open-jar-modal">Eerste spaarpotje</button></div></div></section>';
 
     return (
-      '<section><header class="page-header"><div><p class="eyebrow">Bunq spaardoelen</p><h1>Spaarpotjes</h1><p class="subtle">Je potjes blijven bewust apart van je besteedbare geld. Totaal gespaard: ' +
-      formatMoney(calculation.savingsTotal) +
+      '<section><header class="page-header"><div><p class="eyebrow">Bunq spaardoelen</p><h1>Spaarpotjes</h1><p class="subtle">Je potjes blijven bewust apart van je besteedbare geld. Totaal in spaarpotjes: ' +
+      formatMoney(calculation.savingsBalance) +
       ".</p></div><div class=\"header-actions\"><button class=\"button button-primary\" type=\"button\" data-action=\"open-jar-modal\">+ Spaarpotje</button></div></header>" +
       jarContent +
       '<div class="section-heading"><div><h2>Geplande spaaroverboekingen</h2><p class="section-copy">Deze worden in je planning afgetrokken van je besteedbare geld.</p></div><button class="text-button" type="button" data-action="goto-planning">Planning openen</button></div>' +
       '<section class="panel"><div class="panel-body">' +
       renderOverviewRows(
         calculation.unpaidEntries.filter((entry) => entry.type === "saving"),
-        "Er staan geen geplande spaaroverboekingen in deze betaalcyclus."
+        "Er staan geen geplande spaaroverboekingen in deze betaalmaand."
       ) +
       "</div></section></section>"
     );
@@ -1117,16 +1261,16 @@
   function renderSettings(calculation) {
     const rbcDate = parseDateInput(state.data.settings.rbcTransferDate);
     const prefillNotice = state.data.settings.dateReviewNotice
-      ? '<section class="quick-start"><div><strong>Werkbladgegevens zijn toegevoegd</strong><p>Je vaste lasten, inkomsten en spaarinleg komen uit Financial_Overview_v4_adjusted. De exacte aftrekdatums stonden niet in het werkblad en staan daarom voorlopig op de 1e; pas ze aan in Planning.</p></div><button class="button button-secondary button-small" type="button" data-action="dismiss-prefill-notice">Begrepen</button></section>'
+      ? '<section class="quick-start"><div><strong>Werkbladgegevens zijn bijgewerkt</strong><p>Je inkomsten, uitgaven en spaarinleg zijn bijgewerkt vanuit het financiële werkblad. Controleer bedragen en datums in Planning; wijzigingen in abonnementen worden niet automatisch bijgewerkt.</p></div><button class="button button-secondary button-small" type="button" data-action="dismiss-prefill-notice">Begrepen</button></section>'
       : "";
     return (
       '<section><header class="page-header"><div><p class="eyebrow">Privé & offline</p><h1>Instellingen</h1><p class="subtle">Je gegevens worden alleen lokaal in deze browser opgeslagen. Er is geen bankkoppeling en geen account nodig.</p></div></header>' +
       prefillNotice +
-      '<div class="settings-grid"><section class="panel settings-panel"><h2>Actuele saldo&apos;s</h2><p class="section-copy">Vul in wat er nu werkelijk op je rekeningen staat.</p><form id="settings-balance-form"><div class="field-grid"><div class="form-field"><label for="setting-rabobank">Rabobank</label><input id="setting-rabobank" name="rabobank" type="number" inputmode="decimal" step="0.01" value="' +
+      '<div class="settings-grid"><section class="panel settings-panel"><h2>Actuele saldi</h2><p class="section-copy">Vul in wat er nu werkelijk op je rekeningen staat.</p><form id="settings-balance-form"><div class="field-grid"><div class="form-field"><label for="setting-rabobank">Rabobank</label><input id="setting-rabobank" name="rabobank" type="text" inputmode="decimal" value="' +
       escapeHtml(state.data.balances.rabobank) +
-      '"></div><div class="form-field"><label for="setting-bunq">Bunq besteedbaar</label><input id="setting-bunq" name="bunq" type="number" inputmode="decimal" step="0.01" value="' +
+      '"></div><div class="form-field"><label for="setting-bunq">Bunq besteedbaar</label><input id="setting-bunq" name="bunq" type="text" inputmode="decimal" value="' +
       escapeHtml(state.data.balances.bunq) +
-      '"></div></div><div class="form-actions"><button class="button button-primary" type="submit">Saldo&apos;s opslaan</button></div></form></section>' +
+      '"></div></div><div class="form-actions"><button class="button button-primary" type="submit">Saldi opslaan</button></div></form></section>' +
       '<section class="panel settings-panel"><h2>Bonaire als inkomen</h2><p class="section-copy">Geen zichtbare rekening. Schakel de overboeking alleen in wanneer die naar Bunq komt.</p><form id="rbc-form"><div class="field-grid"><div class="form-field full"><label for="rbc-enabled">Overboeking meenemen</label><select id="rbc-enabled" name="rbcEnabled"><option value="false"' +
       (!state.data.settings.rbcTransferEnabled ? " selected" : "") +
       '>Nee, niet meenemen</option><option value="true"' +
@@ -1136,7 +1280,7 @@
       '"></div><div class="form-field"><label for="rbc-date">Verwachte datum</label><input id="rbc-date" name="rbcDate" type="date" value="' +
       escapeHtml(rbcDate ? dateInputValue(rbcDate) : dateInputValue(new Date())) +
       '"></div></div><div class="form-actions"><button class="button button-primary" type="submit">Opslaan</button></div></form></section>' +
-      '<section class="panel settings-panel full"><h2>Zo wordt je budget berekend</h2><ul class="info-list"><li><span>1</span><div>De cyclus start op de 25e. Als de 25e op zaterdag of zondag valt, start hij op de vrijdag ervoor.</div></li><li><span>2</span><div>Van je actuele Rabobank- en Bunq-saldo worden alle nog niet-betaalde uitgaven en geplande spaaroverboekingen afgetrokken.</div></li><li><span>3</span><div>Niet-ontvangen inkomsten worden erbij opgeteld. Je spaarpotjes blijven apart en tellen niet mee als vrij besteedbaar geld.</div></li><li><span>4</span><div>Wanneer een bedrag echt is verwerkt, werk je saldo bij en markeer je de post als betaald of ontvangen om dubbel tellen te voorkomen.</div></li></ul></section>' +
+      '<section class="panel settings-panel full"><h2>Zo berekent de app je budget</h2><ul class="info-list"><li><span>1</span><div>De betaalmaand start op de 25e. Als de 25e op zaterdag of zondag valt, start hij op de vrijdag ervoor.</div></li><li><span>2</span><div>Het maandoverzicht telt alle inkomsten, uitgaven en spaarinleg in die volledige betaalmaand mee, ook als ze al zijn verwerkt.</div></li><li><span>3</span><div>Het actuele bedrag gebruikt je Rabobank- en Bunq-saldi, trekt alleen openstaande uitgaven en spaaroverboekingen af en telt nog te ontvangen inkomsten erbij op.</div></li><li><span>4</span><div>Je spaarpotjes blijven apart. Hun ingevulde saldi tellen niet mee als vrij besteedbaar geld.</div></li></ul></section>' +
       '<section class="panel settings-panel"><h2>Reservekopie</h2><p class="section-copy">Bewaar een kopie voordat je van telefoon of browser wisselt.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="export-data">Exporteer gegevens</button><label class="button button-secondary" for="import-file">Importeer gegevens</label><input class="is-hidden" id="import-file" type="file" accept="application/json" data-action="import-data"></div></section>' +
       '<section class="panel settings-panel"><h2>App-update</h2><p class="section-copy">Controleer handmatig of er een nieuwe versie van Mijn Geld klaarstaat. Je lokale gegevens blijven bewaard.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="check-for-updates"' +
       (state.isCheckingForUpdates ? " disabled" : "") +
@@ -1165,7 +1309,13 @@
 
     app.innerHTML = content;
     document.querySelectorAll("[data-view]").forEach((button) => {
-      button.classList.toggle("is-active", button.dataset.view === state.activeView);
+      const isActive = button.dataset.view === state.activeView;
+      button.classList.toggle("is-active", isActive);
+      if (isActive) {
+        button.setAttribute("aria-current", "page");
+      } else {
+        button.removeAttribute("aria-current");
+      }
     });
   }
 
@@ -1175,7 +1325,7 @@
       escapeHtml(title) +
       "</h2>" +
       (copy ? '<p class="section-copy">' + escapeHtml(copy) + "</p>" : "") +
-      '</div><button class="modal-close" type="button" data-action="close-modal" aria-label="Sluiten">×</button></header><div class="modal-body">' +
+      '</div><button class="modal-close" type="button" data-action="close-modal" aria-label="Sluiten">' + ICONS.close + '</button></header><div class="modal-body">' +
       body +
       "</div></div>"
     );
@@ -1183,14 +1333,14 @@
 
   function showBalancesModal() {
     const body =
-      '<form id="balance-form"><div class="field-grid"><div class="form-field"><label for="modal-rabobank">Rabobank</label><input id="modal-rabobank" name="rabobank" type="number" inputmode="decimal" step="0.01" value="' +
+      '<form id="balance-form"><div class="field-grid"><div class="form-field"><label for="modal-rabobank">Rabobank</label><input id="modal-rabobank" name="rabobank" type="text" inputmode="decimal" value="' +
       escapeHtml(state.data.balances.rabobank) +
-      '"><span class="helper-copy">Voor je vaste lasten.</span></div><div class="form-field"><label for="modal-bunq">Bunq besteedbaar</label><input id="modal-bunq" name="bunq" type="number" inputmode="decimal" step="0.01" value="' +
+      '"><span class="helper-copy">Voor je vaste lasten.</span></div><div class="form-field"><label for="modal-bunq">Bunq besteedbaar</label><input id="modal-bunq" name="bunq" type="text" inputmode="decimal" value="' +
       escapeHtml(state.data.balances.bunq) +
-      '"><span class="helper-copy">Zonder je losse spaarpotjes.</span></div></div><div class="modal-footer"><button class="button button-secondary" type="button" data-action="close-modal">Annuleren</button><button class="button button-primary" type="submit">Saldo&apos;s opslaan</button></div></form>';
+      '"><span class="helper-copy">Zonder je losse spaarpotjes.</span></div></div><div class="modal-footer"><button class="button button-secondary" type="button" data-action="close-modal">Annuleren</button><button class="button button-primary" type="submit">Saldi opslaan</button></div></form>';
     modalRoot.innerHTML = modalShell(
-      "Actuele saldo's",
-      "Vul in wat er op dit moment daadwerkelijk op je rekening staat.",
+      "Actuele saldi",
+      "Vul in wat er op dit moment daadwerkelijk op je rekeningen staat.",
       body
     );
     focusModal();
@@ -1257,17 +1407,17 @@
       (existing && existing.cadence === "once" ? " selected" : "") +
       ">Eenmalig</option><option value=\"payday\"" +
       (existing && existing.cadence === "payday" ? " selected" : "") +
-      ">Salarisdag</option></select></div><div class=\"form-field\"><label for=\"item-date\">Aftrek- of ontvangstdatum</label><input id=\"item-date\" name=\"date\" required type=\"date\" value=\"" +
+      ">Salarisdag</option></select></div><div class=\"form-field\"><label for=\"item-date\">Betaal-, overboekings- of ontvangstdatum</label><input id=\"item-date\" name=\"date\" required type=\"date\" value=\"" +
       escapeHtml(selectedDate) +
       '"></div><div class="form-field"><label for="item-jar">Spaarpotje</label><select id="item-jar" name="jarId">' +
       jarsOptions +
-      '</select></div></div><p class="helper-copy" style="margin-top: 16px;">Voor maandelijkse posten onthoudt de app de dag van de maand. Het gekoppelde potje is alleen ter herkenning; werk de werkelijke potjessaldo zelf bij.</p><div class="modal-footer"><button class="button button-secondary" type="button" data-action="close-modal">Annuleren</button><button class="button button-primary" type="submit">' +
+      '</select></div></div><p class="helper-copy" style="margin-top: 16px;">Voor maandelijkse posten onthoudt de app de dag van de maand. Het gekoppelde potje is alleen ter herkenning; werk het werkelijke saldo van het potje zelf bij.</p><div class="modal-footer"><button class="button button-secondary" type="button" data-action="close-modal">Annuleren</button><button class="button button-primary" type="submit">' +
       (existing ? "Wijzigingen opslaan" : "Post toevoegen") +
       "</button></div></form>";
 
     modalRoot.innerHTML = modalShell(
       existing ? "Post bewerken" : "Nieuwe post",
-      "Plan alles wat je deze betaalcyclus verwacht.",
+      "Plan alles wat je deze betaalmaand verwacht.",
       body
     );
     focusModal();
@@ -1282,9 +1432,9 @@
       (existing ? escapeHtml(existing.id) : "") +
       '"><div class="field-grid"><div class="form-field full"><label for="jar-name">Naam van potje</label><input id="jar-name" name="name" required maxlength="60" placeholder="Bijvoorbeeld: vakantie, buffer, cursus" value="' +
       escapeHtml(existing ? existing.name : "") +
-      '"></div><div class="form-field"><label for="jar-balance">Nu in het potje</label><input id="jar-balance" name="balance" required type="number" min="0" inputmode="decimal" step="0.01" value="' +
+      '"></div><div class="form-field"><label for="jar-balance">Nu in het potje</label><input id="jar-balance" name="balance" required type="text" inputmode="decimal" value="' +
       escapeHtml(existing ? existing.balance : "") +
-      '"></div><div class="form-field"><label for="jar-target">Doelbedrag (optioneel)</label><input id="jar-target" name="target" type="number" min="0" inputmode="decimal" step="0.01" value="' +
+      '"></div><div class="form-field"><label for="jar-target">Doelbedrag (optioneel)</label><input id="jar-target" name="target" type="text" inputmode="decimal" value="' +
       escapeHtml(existing ? existing.target : "") +
       '"></div></div><div class="modal-footer"><button class="button button-secondary" type="button" data-action="close-modal">Annuleren</button><button class="button button-primary" type="submit">' +
       (existing ? "Potje opslaan" : "Potje toevoegen") +
@@ -1541,7 +1691,7 @@
       state.data.balances.bunq = numberValue(formData.get("bunq"), 0);
       state.data.hasSetBalances = true;
       closeModal();
-      commit("Je actuele saldo's zijn bijgewerkt.");
+      commit("Je actuele saldi zijn bijgewerkt.");
       return;
     }
 
@@ -1648,7 +1798,7 @@
       item.dayOfMonth = selectedDate.getDate();
       commit(
         item.cadence === "monthly"
-          ? "De maandelijkse aftrekdag is aangepast."
+          ? "De maandelijkse datum is aangepast."
           : "De datum van deze post is aangepast."
       );
       return;

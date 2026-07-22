@@ -71,7 +71,9 @@ select:focus-visible {
   flex-direction: column;
   height: 100svh;
   padding: 26px 18px 20px;
-  background: rgba(23, 43, 36, 0.98);
+  background:
+    radial-gradient(circle at 15% 0%, rgba(193, 230, 129, 0.12), transparent 18rem),
+    linear-gradient(180deg, #1a3129 0%, #12251f 100%);
   color: #f5f9ef;
 }
 
@@ -129,15 +131,29 @@ select:focus-visible {
   background: transparent;
   color: #dce8df;
   text-align: left;
+  transition: background 160ms ease, color 160ms ease, transform 160ms ease, box-shadow 160ms ease;
+}
+
+.nav-icon {
+  display: inline-grid;
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  place-items: center;
+  color: #c3d7c7;
+  border-radius: 10px;
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
-.nav-item > span:first-child {
-  display: inline-grid;
-  width: 18px;
-  place-items: center;
-  color: #c3d7c7;
-  font-size: 18px;
+.nav-icon svg,
+.button-icon {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .nav-item:hover,
@@ -146,8 +162,22 @@ select:focus-visible {
   color: #ffffff;
 }
 
-.nav-item.is-active > span:first-child {
-  color: var(--lime);
+.nav-item:hover .nav-icon {
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.nav-item.is-active {
+  box-shadow: inset 3px 0 0 var(--lime-strong);
+}
+
+.nav-item.is-active .nav-icon {
+  background: var(--lime);
+  color: var(--ink);
+}
+
+.nav-label {
+  font-weight: 650;
 }
 
 .sidebar-footer {
@@ -169,9 +199,10 @@ select:focus-visible {
   transform: translateY(-1px);
 }
 
-.start-button > span {
-  font-size: 20px;
-  font-weight: 400;
+.start-button .button-icon {
+  width: 18px;
+  height: 18px;
+  stroke-width: 2.2;
 }
 
 .sidebar-footer p {
@@ -358,6 +389,88 @@ h3 {
   margin: 0;
   color: #586957;
   font-size: 14px;
+}
+
+.payday-summary {
+  margin-bottom: 20px;
+  padding: 22px;
+  border: 1px solid var(--line);
+  border-radius: 23px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 25px rgba(30, 51, 39, 0.03);
+}
+
+.payday-summary-heading {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 17px;
+}
+
+.payday-summary-heading h2 {
+  margin-bottom: 5px;
+}
+
+.payday-summary-heading .section-copy {
+  max-width: 680px;
+  margin-bottom: 0;
+}
+
+.payday-summary-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.payday-total-card {
+  min-width: 0;
+  padding: 17px;
+  border: 1px solid var(--line);
+  border-radius: 17px;
+  background: var(--surface-soft);
+}
+
+.payday-total-card p {
+  margin-bottom: 7px;
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 690;
+}
+
+.payday-total-card strong {
+  display: block;
+  font-size: clamp(22px, 3vw, 30px);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.045em;
+  line-height: 1.08;
+}
+
+.payday-total-card small {
+  display: block;
+  margin-top: 8px;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.45;
+}
+
+.payday-total-card.is-highlight {
+  border-color: var(--green-dark);
+  background: var(--green-dark);
+  color: #ffffff;
+}
+
+.payday-total-card.is-highlight p,
+.payday-total-card.is-highlight small {
+  color: #d8e5d9;
+}
+
+.payday-total-card.is-highlight strong {
+  color: var(--lime);
+}
+
+.payday-total-card.is-highlight strong.negative {
+  color: #ffc9bd;
 }
 
 .hero-grid {
@@ -901,6 +1014,18 @@ h3 {
   color: var(--ink-soft);
 }
 
+.icon-button svg,
+.modal-close svg,
+.jar-icon svg {
+  width: 17px;
+  height: 17px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
 .section-heading {
   display: flex;
   align-items: flex-end;
@@ -932,6 +1057,11 @@ h3 {
   background: var(--lime);
   color: var(--ink);
   font-weight: 800;
+}
+
+.jar-icon svg {
+  width: 21px;
+  height: 21px;
 }
 
 .jar-card h2 {
@@ -1138,6 +1268,11 @@ h3 {
   font-size: 20px;
 }
 
+.modal-close svg {
+  width: 19px;
+  height: 19px;
+}
+
 .modal-footer {
   display: flex;
   justify-content: flex-end;
@@ -1220,6 +1355,10 @@ h3 {
     padding: 34px 30px 50px;
   }
 
+  .payday-summary-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .planning-row {
     grid-template-columns: 126px minmax(140px, 1fr) 104px auto;
   }
@@ -1243,7 +1382,9 @@ h3 {
     width: 100%;
     height: auto;
     padding: 7px max(12px, env(safe-area-inset-left)) calc(7px + env(safe-area-inset-bottom)) max(12px, env(safe-area-inset-right));
-    background: rgba(23, 43, 36, 0.97);
+    border-top: 1px solid rgba(223, 240, 185, 0.1);
+    background: rgba(18, 37, 31, 0.96);
+    backdrop-filter: blur(18px);
     box-shadow: 0 -9px 26px rgba(18, 36, 27, 0.16);
   }
 
@@ -1262,15 +1403,37 @@ h3 {
     min-height: 54px;
     padding: 5px 2px;
     place-items: center;
-    gap: 2px;
+    gap: 1px;
     border-radius: 11px;
     font-size: 10px;
     text-align: center;
   }
 
-  .nav-item > span:first-child {
-    height: 20px;
-    font-size: 18px;
+  .nav-icon {
+    width: 30px;
+    height: 28px;
+    flex-basis: 28px;
+    border-radius: 9px;
+  }
+
+  .nav-icon svg {
+    width: 19px;
+    height: 19px;
+    stroke-width: 1.9;
+  }
+
+  .nav-item.is-active {
+    background: rgba(223, 240, 185, 0.13);
+    box-shadow: inset 0 2px 0 var(--lime-strong);
+  }
+
+  .nav-item.is-active .nav-icon {
+    background: transparent;
+    color: var(--lime);
+  }
+
+  .nav-label {
+    line-height: 1.1;
   }
 
   .app-main {
@@ -1281,6 +1444,23 @@ h3 {
   .page-header {
     display: block;
     margin-bottom: 24px;
+  }
+
+  .payday-summary {
+    padding: 17px;
+  }
+
+  .payday-summary-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .payday-total-card {
+    padding: 14px 12px;
+  }
+
+  .payday-total-card strong {
+    font-size: 22px;
   }
 
   .header-actions {

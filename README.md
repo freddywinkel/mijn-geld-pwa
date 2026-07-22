@@ -1,15 +1,16 @@
 # Mijn Geld
 
-Een volledig offline PWA voor een rustig overzicht van je betaalcyclus, openstaande vaste lasten, saldo's en spaarpotjes.
+Een volledig offline PWA voor een rustig overzicht van je betaalmaand, openstaande uitgaven, saldi en spaarpotjes.
 
 ## Wat de app doet
 
-- De betaalcyclus begint op de 25e; valt die dag in het weekend, dan begint hij op de vrijdag ervoor.
+- De betaalmaand begint op de 25e; valt die dag in het weekend, dan begint hij op de vrijdag ervoor.
+- Het dashboard toont per volledige betaalmaand de totale inkomsten, uitgaven, spaarinleg, het ingevulde spaarsaldo en wat vrij te besteden is.
 - Je vult de actuele saldi van Rabobank en Bunq zelf in.
 - Niet-betaalde uitgaven en spaaroverboekingen worden afgetrokken; verwachte inkomsten worden opgeteld.
 - De app toont wat vrij te besteden is tot de volgende salarisdag, plus een gemiddeld budget per dag, twee dagen en week.
 - Rabobank is bedoeld voor vaste lasten. Bunq is voor besteedbaar geld en losse spaarpotjes.
-- De eerste setup bevat de terugkerende inkomsten, vaste lasten, abonnementen en maandelijkse spaarinleg uit Financial_Overview_v4_adjusted. Aftrekdatums staan voorlopig op de 1e omdat het werkblad die datums niet bevat.
+- De eerste setup bevat de terugkerende inkomsten, uitgaven, abonnementen en maandelijkse spaarinleg uit het financiële werkblad. Controleer bedragen en datums in Planning; wijzigingen worden niet automatisch bijgewerkt.
 - De €600 van Bonaire verschijnt alleen als optionele, schakelbare verwachte inkomst en nooit als zichtbare rekening.
 - Alle gegevens staan uitsluitend in de browser op dit apparaat. Via Instellingen kun je een reservekopie exporteren.
 - Nieuwe app-versies worden gemeld met een updatekaart. Je kunt de update toepassen zonder je lokale gegevens kwijt te raken.
