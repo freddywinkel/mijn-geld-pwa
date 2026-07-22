@@ -1826,19 +1826,27 @@ h3 {
 .form-field input[type="date"] {
   -webkit-appearance: none;
   appearance: none;
-  display: block;
+  display: flex;
+  align-items: center;
   inline-size: 100%;
   height: 43px;
   min-inline-size: 0;
   min-width: 0;
   max-inline-size: 100%;
   max-width: 100%;
-  text-align: center;
+  line-height: normal;
+  text-align: left;
 }
 
 .form-field input[type="date"]::-webkit-date-and-time-value {
+  display: block;
+  inline-size: 100%;
+  block-size: 1.5em;
   min-width: 0;
-  text-align: center;
+  min-block-size: 1.5em;
+  margin: 0;
+  line-height: 1.5;
+  text-align: left;
 }
 
 .version-label {

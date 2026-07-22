@@ -58,7 +58,7 @@
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
   const appShell = document.querySelector(".app-shell");
-  const APP_VERSION = "v15";
+  const APP_VERSION = "v16";
   let activePaydayDay = 25;
   const initialData = loadData();
   activePaydayDay = initialData.settings.paydayDay;
