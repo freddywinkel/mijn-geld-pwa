@@ -45,7 +45,7 @@
   const modalRoot = document.getElementById("modal-root");
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
-  const APP_VERSION = "v10";
+  const APP_VERSION = "v11";
   const PREFILL_REVISION = "financial-overview-v4-adjusted";
   const PREFILL_ADDITIONS_REVISION = "financial-overview-v4-dates-expenses";
   const PREFILL_ADDITION_SOURCE_KEYS = new Set([
@@ -431,9 +431,11 @@
       savingsJars: [],
       paidOccurrences: {},
       settings: {
-        rbcTransferEnabled: false,
-        rbcTransferAmount: 600,
-        rbcTransferDate: dateInputValue(new Date()),
+        extraIncomeEnabled: false,
+        extraIncomeName: "Extra inkomen",
+        extraIncomeAmount: 0,
+        extraIncomeDate: dateInputValue(new Date()),
+        extraIncomeAccount: "bunq",
         dateReviewNotice: true
       }
     };
@@ -567,6 +569,14 @@
         ? rawData.paidOccurrences
         : {};
 
+    const rawSettings =
+      rawData.settings && typeof rawData.settings === "object" ? rawData.settings : {};
+    const extraIncomeDateValue = rawSettings.extraIncomeDate || rawSettings.rbcTransferDate;
+    const extraIncomeName = String(
+      rawSettings.extraIncomeName ||
+        defaults.settings.extraIncomeName
+    ).trim();
+
     return applyWorkbookPrefill({
       version: 2,
       prefillRevision: rawData.prefillRevision ? String(rawData.prefillRevision) : "",
@@ -582,18 +592,30 @@
       savingsJars,
       paidOccurrences,
       settings: {
-        rbcTransferEnabled: Boolean(rawData.settings && rawData.settings.rbcTransferEnabled),
-        rbcTransferAmount: Math.max(
-          0,
-          numberValue(rawData.settings && rawData.settings.rbcTransferAmount, 600)
+        extraIncomeEnabled: Boolean(
+          rawSettings.extraIncomeEnabled !== undefined
+            ? rawSettings.extraIncomeEnabled
+            : rawSettings.rbcTransferEnabled
         ),
-        rbcTransferDate:
-          parseDateInput(rawData.settings && rawData.settings.rbcTransferDate)
-            ? rawData.settings.rbcTransferDate
-            : defaults.settings.rbcTransferDate,
+        extraIncomeName: extraIncomeName || defaults.settings.extraIncomeName,
+        extraIncomeAmount: Math.max(
+          0,
+          numberValue(
+            rawSettings.extraIncomeAmount !== undefined
+              ? rawSettings.extraIncomeAmount
+              : rawSettings.rbcTransferAmount,
+            defaults.settings.extraIncomeAmount
+          )
+        ),
+        extraIncomeDate: parseDateInput(extraIncomeDateValue)
+          ? extraIncomeDateValue
+          : defaults.settings.extraIncomeDate,
+        extraIncomeAccount: ["rabobank", "bunq"].includes(rawSettings.extraIncomeAccount)
+          ? rawSettings.extraIncomeAccount
+          : defaults.settings.extraIncomeAccount,
         dateReviewNotice:
-          rawData.settings && typeof rawData.settings.dateReviewNotice === "boolean"
-            ? rawData.settings.dateReviewNotice
+          typeof rawSettings.dateReviewNotice === "boolean"
+            ? rawSettings.dateReviewNotice
             : false
       }
     });
@@ -738,21 +760,21 @@
       })
       .filter(Boolean);
 
-    const rbcDate = parseDateInput(state.data.settings.rbcTransferDate);
+    const extraIncomeDate = parseDateInput(state.data.settings.extraIncomeDate);
     if (
-      state.data.settings.rbcTransferEnabled &&
-      state.data.settings.rbcTransferAmount > 0 &&
-      isWithinCycle(rbcDate, cycle)
+      state.data.settings.extraIncomeEnabled &&
+      state.data.settings.extraIncomeAmount > 0 &&
+      isWithinCycle(extraIncomeDate, cycle)
     ) {
       entries.push({
-        id: "rbc-transfer",
-        name: "Bonaire-overboeking",
+        id: "extra-income",
+        name: state.data.settings.extraIncomeName,
         type: "income",
-        amount: state.data.settings.rbcTransferAmount,
-        account: "bunq",
+        amount: state.data.settings.extraIncomeAmount,
+        account: state.data.settings.extraIncomeAccount,
         cadence: "once",
-        date: state.data.settings.rbcTransferDate,
-        occurrence: rbcDate,
+        date: state.data.settings.extraIncomeDate,
+        occurrence: extraIncomeDate,
         paid: false,
         virtual: true
       });
@@ -922,7 +944,7 @@
         .map((entry) => {
           const isIncome = entry.type === "income";
           const meta = entry.virtual
-            ? "optionele overboeking"
+            ? "extra inkomen · " + ACCOUNT_LABELS[entry.account]
             : ACCOUNT_LABELS[entry.account] + " · " + TYPE_LABELS[entry.type];
           return (
             '<div class="overview-row">' +
@@ -1080,19 +1102,23 @@
       renderAccountCard("rabobank", calculation) +
       renderAccountCard("bunq", calculation) +
       "</div></div></section>" +
-      '<section class="panel rbc-card"><h2>Extra inkomen uit Bonaire</h2><p>De Bonaire RBC-rekening blijft verborgen. Neem alleen de overboeking mee wanneer je die naar Bunq wilt halen.</p><div class="switch-row"><div class="switch-copy"><strong>' +
-      formatMoney(state.data.settings.rbcTransferAmount) +
-      ' als inkomen meenemen</strong><small>Verwachte datum: ' +
+      '<section class="panel extra-income-card"><div class="extra-income-heading"><div><h2>Extra inkomen</h2><p>Tel een eenmalige meevaller of andere extra inkomst mee in deze betaalmaand.</p></div><button class="text-button" type="button" data-action="goto-settings">Bewerken</button></div><div class="switch-row"><div class="switch-copy"><strong>' +
+      escapeHtml(state.data.settings.extraIncomeName) +
+      ': ' +
+      formatMoney(state.data.settings.extraIncomeAmount) +
+      '</strong><small>Verwacht op ' +
       escapeHtml(
-        parseDateInput(state.data.settings.rbcTransferDate)
-          ? formatShortDate(parseDateInput(state.data.settings.rbcTransferDate))
+        parseDateInput(state.data.settings.extraIncomeDate)
+          ? formatShortDate(parseDateInput(state.data.settings.extraIncomeDate))
           : "nog kiezen"
       ) +
+      ' · naar ' +
+      escapeHtml(ACCOUNT_LABELS[state.data.settings.extraIncomeAccount]) +
       '</small></div><button class="switch ' +
-      (state.data.settings.rbcTransferEnabled ? "is-on" : "") +
+      (state.data.settings.extraIncomeEnabled ? "is-on" : "") +
       '" type="button" role="switch" aria-checked="' +
-      (state.data.settings.rbcTransferEnabled ? "true" : "false") +
-      '" data-action="toggle-rbc"><span></span></button></div></section></div></div>' +
+      (state.data.settings.extraIncomeEnabled ? "true" : "false") +
+      '" aria-label="Extra inkomen meetellen" data-action="toggle-extra-income"><span></span></button></div></section></div></div>' +
       "</section>"
     );
   }
@@ -1170,7 +1196,7 @@
       cadenceText +
       "</span></div></div>" +
       '<div class="planning-account">' +
-      (entry.virtual ? "Naar Bunq" : ACCOUNT_LABELS[entry.account]) +
+      ACCOUNT_LABELS[entry.account] +
       "</div>" +
       '<div class="planning-amount money ' +
       (isIncome ? "positive" : "negative") +
@@ -1259,7 +1285,7 @@
   }
 
   function renderSettings(calculation) {
-    const rbcDate = parseDateInput(state.data.settings.rbcTransferDate);
+    const extraIncomeDate = parseDateInput(state.data.settings.extraIncomeDate);
     const prefillNotice = state.data.settings.dateReviewNotice
       ? '<section class="quick-start"><div><strong>Werkbladgegevens zijn bijgewerkt</strong><p>Je inkomsten, uitgaven en spaarinleg zijn bijgewerkt vanuit het financiële werkblad. Controleer bedragen en datums in Planning; wijzigingen in abonnementen worden niet automatisch bijgewerkt.</p></div><button class="button button-secondary button-small" type="button" data-action="dismiss-prefill-notice">Begrepen</button></section>'
       : "";
@@ -1271,15 +1297,21 @@
       '"></div><div class="form-field"><label for="setting-bunq">Bunq besteedbaar</label><input id="setting-bunq" name="bunq" type="text" inputmode="decimal" value="' +
       escapeHtml(state.data.balances.bunq) +
       '"></div></div><div class="form-actions"><button class="button button-primary" type="submit">Saldi opslaan</button></div></form></section>' +
-      '<section class="panel settings-panel"><h2>Bonaire als inkomen</h2><p class="section-copy">Geen zichtbare rekening. Schakel de overboeking alleen in wanneer die naar Bunq komt.</p><form id="rbc-form"><div class="field-grid"><div class="form-field full"><label for="rbc-enabled">Overboeking meenemen</label><select id="rbc-enabled" name="rbcEnabled"><option value="false"' +
-      (!state.data.settings.rbcTransferEnabled ? " selected" : "") +
-      '>Nee, niet meenemen</option><option value="true"' +
-      (state.data.settings.rbcTransferEnabled ? " selected" : "") +
-      ">Ja, als verwacht inkomen</option></select></div><div class=\"form-field\"><label for=\"rbc-amount\">Bedrag</label><input id=\"rbc-amount\" name=\"rbcAmount\" type=\"text\" inputmode=\"decimal\" value=\"" +
-      escapeHtml(state.data.settings.rbcTransferAmount) +
-      '"></div><div class="form-field"><label for="rbc-date">Verwachte datum</label><input id="rbc-date" name="rbcDate" type="date" value="' +
-      escapeHtml(rbcDate ? dateInputValue(rbcDate) : dateInputValue(new Date())) +
-      '"></div></div><div class="form-actions"><button class="button button-primary" type="submit">Opslaan</button></div></form></section>' +
+      '<section class="panel settings-panel"><h2>Extra inkomen</h2><p class="section-copy">Stel een eenmalige extra inkomst in. Wanneer je die inschakelt, verschijnt ze bij de inkomsten en in alle overzichtstotalen.</p><form id="extra-income-form"><div class="field-grid"><div class="form-field full"><label for="extra-income-name">Naam</label><input id="extra-income-name" name="extraIncomeName" required maxlength="80" placeholder="Bijvoorbeeld: teruggave of bonus" value="' +
+      escapeHtml(state.data.settings.extraIncomeName) +
+      '"></div><div class="form-field"><label for="extra-income-amount">Bedrag</label><input id="extra-income-amount" name="extraIncomeAmount" required type="text" inputmode="decimal" value="' +
+      escapeHtml(state.data.settings.extraIncomeAmount) +
+      '"></div><div class="form-field"><label for="extra-income-date">Verwachte datum</label><input id="extra-income-date" name="extraIncomeDate" required type="date" value="' +
+      escapeHtml(extraIncomeDate ? dateInputValue(extraIncomeDate) : dateInputValue(new Date())) +
+      '"></div><div class="form-field"><label for="extra-income-account">Naar rekening</label><select id="extra-income-account" name="extraIncomeAccount"><option value="rabobank"' +
+      (state.data.settings.extraIncomeAccount === "rabobank" ? " selected" : "") +
+      '>Rabobank</option><option value="bunq"' +
+      (state.data.settings.extraIncomeAccount === "bunq" ? " selected" : "") +
+      '>Bunq</option></select></div><div class="form-field"><label for="extra-income-enabled">Meetellen</label><select id="extra-income-enabled" name="extraIncomeEnabled"><option value="false"' +
+      (!state.data.settings.extraIncomeEnabled ? " selected" : "") +
+      '>Nee, nog niet</option><option value="true"' +
+      (state.data.settings.extraIncomeEnabled ? " selected" : "") +
+      '>Ja, in deze betaalmaand</option></select></div></div><div class="form-actions"><button class="button button-primary" type="submit">Extra inkomen opslaan</button></div></form></section>' +
       '<section class="panel settings-panel full"><h2>Zo berekent de app je budget</h2><ul class="info-list"><li><span>1</span><div>De betaalmaand start op de 25e. Als de 25e op zaterdag of zondag valt, start hij op de vrijdag ervoor.</div></li><li><span>2</span><div>Het maandoverzicht telt alle inkomsten, uitgaven en spaarinleg in die volledige betaalmaand mee, ook als ze al zijn verwerkt.</div></li><li><span>3</span><div>Het actuele bedrag gebruikt je Rabobank- en Bunq-saldi, trekt alleen openstaande uitgaven en spaaroverboekingen af en telt nog te ontvangen inkomsten erbij op.</div></li><li><span>4</span><div>Je spaarpotjes blijven apart. Hun ingevulde saldi tellen niet mee als vrij besteedbaar geld.</div></li></ul></section>' +
       '<section class="panel settings-panel"><h2>Reservekopie</h2><p class="section-copy">Bewaar een kopie voordat je van telefoon of browser wisselt.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="export-data">Exporteer gegevens</button><label class="button button-secondary" for="import-file">Importeer gegevens</label><input class="is-hidden" id="import-file" type="file" accept="application/json" data-action="import-data"></div></section>' +
       '<section class="panel settings-panel"><h2>App-update</h2><p class="section-copy">Controleer handmatig of er een nieuwe versie van Mijn Geld klaarstaat. Je lokale gegevens blijven bewaard.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="check-for-updates"' +
@@ -1591,12 +1623,24 @@
       commit();
       return;
     }
-    if (action === "toggle-rbc") {
-      state.data.settings.rbcTransferEnabled = !state.data.settings.rbcTransferEnabled;
+    if (action === "toggle-extra-income") {
+      const extraIncomeDate = parseDateInput(state.data.settings.extraIncomeDate);
+      const cycle = getBudgetCycle();
+      if (
+        !state.data.settings.extraIncomeEnabled &&
+        (!state.data.settings.extraIncomeName ||
+          state.data.settings.extraIncomeAmount <= 0 ||
+          !isWithinCycle(extraIncomeDate, cycle))
+      ) {
+        setActiveView("settings");
+        showToast("Stel eerst een bedrag en datum binnen deze betaalmaand in.");
+        return;
+      }
+      state.data.settings.extraIncomeEnabled = !state.data.settings.extraIncomeEnabled;
       commit(
-        state.data.settings.rbcTransferEnabled
-          ? "De Bonaire-overboeking wordt nu als verwacht inkomen meegerekend."
-          : "De Bonaire-overboeking wordt niet meer meegerekend."
+        state.data.settings.extraIncomeEnabled
+          ? "Het extra inkomen staat nu in je overzicht."
+          : "Het extra inkomen wordt niet meer meegerekend."
       );
       return;
     }
@@ -1679,7 +1723,7 @@
       return;
     }
 
-    if (!["balance-form", "settings-balance-form", "item-form", "jar-form", "rbc-form"].includes(form.id)) {
+    if (!["balance-form", "settings-balance-form", "item-form", "jar-form", "extra-income-form"].includes(form.id)) {
       return;
     }
 
@@ -1695,16 +1739,38 @@
       return;
     }
 
-    if (form.id === "rbc-form") {
-      const rbcDate = parseDateInput(formData.get("rbcDate"));
-      if (!rbcDate) {
-        showToast("Kies een geldige datum voor de overboeking.");
+    if (form.id === "extra-income-form") {
+      const extraIncomeName = String(formData.get("extraIncomeName") || "").trim();
+      const extraIncomeAmount = Math.max(
+        0,
+        numberValue(formData.get("extraIncomeAmount"), 0)
+      );
+      const extraIncomeDate = parseDateInput(formData.get("extraIncomeDate"));
+      const extraIncomeAccount = String(formData.get("extraIncomeAccount") || "");
+      const extraIncomeEnabled = formData.get("extraIncomeEnabled") === "true";
+      if (
+        !extraIncomeName ||
+        extraIncomeAmount <= 0 ||
+        !extraIncomeDate ||
+        !["rabobank", "bunq"].includes(extraIncomeAccount)
+      ) {
+        showToast("Vul een naam, positief bedrag, rekening en geldige datum in.");
         return;
       }
-      state.data.settings.rbcTransferEnabled = formData.get("rbcEnabled") === "true";
-      state.data.settings.rbcTransferAmount = Math.max(0, numberValue(formData.get("rbcAmount"), 0));
-      state.data.settings.rbcTransferDate = dateInputValue(rbcDate);
-      commit("De Bonaire-instelling is opgeslagen.");
+      if (extraIncomeEnabled && !isWithinCycle(extraIncomeDate, getBudgetCycle())) {
+        showToast("Kies een datum binnen deze betaalmaand om het inkomen mee te tellen.");
+        return;
+      }
+      state.data.settings.extraIncomeEnabled = extraIncomeEnabled;
+      state.data.settings.extraIncomeName = extraIncomeName;
+      state.data.settings.extraIncomeAmount = extraIncomeAmount;
+      state.data.settings.extraIncomeDate = dateInputValue(extraIncomeDate);
+      state.data.settings.extraIncomeAccount = extraIncomeAccount;
+      commit(
+        extraIncomeEnabled
+          ? "Het extra inkomen is opgeslagen en staat in je overzicht."
+          : "Het extra inkomen is opgeslagen."
+      );
       return;
     }
 

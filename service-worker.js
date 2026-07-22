@@ -1,4 +1,4 @@
-const CACHE_NAME = "mijn-geld-v10";
+const CACHE_NAME = "mijn-geld-v11";
 const APP_SHELL = [
   "./",
   "./index.html",

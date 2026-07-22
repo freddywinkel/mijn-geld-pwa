@@ -796,16 +796,23 @@ h3 {
   color: var(--ink);
 }
 
-.rbc-card {
+.extra-income-card {
   padding: 20px 22px;
   background: var(--blue-soft);
 }
 
-.rbc-card h2 {
+.extra-income-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.extra-income-card h2 {
   margin-bottom: 4px;
 }
 
-.rbc-card p {
+.extra-income-card p {
   margin-bottom: 16px;
   color: #536a76;
   font-size: 13px;
@@ -1572,7 +1579,7 @@ h3 {
 
   .panel-header,
   .panel-body,
-  .rbc-card {
+  .extra-income-card {
     padding-left: 17px;
     padding-right: 17px;
   }

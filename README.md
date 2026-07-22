@@ -11,7 +11,7 @@ Een volledig offline PWA voor een rustig overzicht van je betaalmaand, openstaan
 - De app toont wat vrij te besteden is tot de volgende salarisdag, plus een gemiddeld budget per dag, twee dagen en week.
 - Rabobank is bedoeld voor vaste lasten. Bunq is voor besteedbaar geld en losse spaarpotjes.
 - De eerste setup bevat de terugkerende inkomsten, uitgaven, abonnementen en maandelijkse spaarinleg uit het financiële werkblad. Controleer bedragen en datums in Planning; wijzigingen worden niet automatisch bijgewerkt.
-- De €600 van Bonaire verschijnt alleen als optionele, schakelbare verwachte inkomst en nooit als zichtbare rekening.
+- Je kunt een eenmalige extra inkomst instellen met een eigen naam, bedrag, datum en doelrekening. Wanneer ze is ingeschakeld, telt ze mee in de inkomsten, rekeningprognose en overzichtstotalen.
 - Alle gegevens staan uitsluitend in de browser op dit apparaat. Via Instellingen kun je een reservekopie exporteren.
 - Nieuwe app-versies worden gemeld met een updatekaart. Je kunt de update toepassen zonder je lokale gegevens kwijt te raken.
 
