@@ -20,7 +20,9 @@
     edit: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20h9"></path><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L8 18l-4 1 1-4Z"></path></svg>',
     remove: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>',
     wallet: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7.8A2.8 2.8 0 0 1 5.8 5H18"></path><path d="M16 12h5v5h-5a2.5 2.5 0 0 1 0-5Z"></path></svg>',
-    close: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>'
+    close: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>',
+    income: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v14M6.5 12.5 12 18l5.5-5.5"></path></svg>',
+    outgoing: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20V6M6.5 11.5 12 6l5.5 5.5"></path></svg>'
   };
   const moneyFormatter = new Intl.NumberFormat("nl-NL", {
     style: "currency",
@@ -45,7 +47,7 @@
   const modalRoot = document.getElementById("modal-root");
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
-  const APP_VERSION = "v11";
+  const APP_VERSION = "v12";
   const PREFILL_REVISION = "financial-overview-v4-adjusted";
   const PREFILL_ADDITIONS_REVISION = "financial-overview-v4-dates-expenses";
   const PREFILL_ADDITION_SOURCE_KEYS = new Set([
@@ -1168,7 +1170,9 @@
         '">' + ICONS.remove + '</button>';
 
     return (
-      '<article class="planning-row ' +
+      '<article class="planning-row planning-row-' +
+      (isIncome ? "income" : "outgoing") +
+      " " +
       (entry.paid ? "is-paid" : "") +
       '">' +
       '<div class="planning-date"><label for="date-' +
@@ -1208,21 +1212,79 @@
     );
   }
 
-  function renderPlanning(calculation) {
-    const rows = calculation.entries.length
+  function planningEntryCount(count) {
+    return count + " " + (count === 1 ? "post" : "posten");
+  }
+
+  function renderPlanningGroup(options) {
+    const rows = options.entries.length
       ? '<div class="planning-list">' +
-        calculation.entries.map((entry) => renderPlanningRow(entry, calculation.cycle)).join("") +
+        options.entries
+          .map((entry) => renderPlanningRow(entry, options.cycle))
+          .join("") +
         "</div>"
-      : '<div class="panel"><div class="empty-state"><div><p>Je planning is nog leeg. Voeg vaste lasten, inkomsten, losse uitgaven of geplande spaaroverboekingen toe.</p><button class="button button-primary" type="button" data-action="open-item-modal">Eerste post toevoegen</button></div></div></div>';
+      : '<div class="planning-group-empty"><p>' +
+        escapeHtml(options.emptyCopy) +
+        '</p><button class="button button-secondary button-small" type="button" data-action="open-item-modal">Post toevoegen</button></div>';
+    const total = options.entries.reduce(
+      (sum, entry) => sum + numberValue(entry.amount, 0),
+      0
+    );
+
+    return (
+      '<section class="planning-group planning-group-' +
+      options.tone +
+      '"><header class="planning-group-header"><div class="planning-group-title"><span class="planning-group-icon" aria-hidden="true">' +
+      ICONS[options.icon] +
+      '</span><div><p class="planning-group-kicker">' +
+      escapeHtml(options.kicker) +
+      "</p><h2>" +
+      escapeHtml(options.title) +
+      '</h2><p class="section-copy">' +
+      escapeHtml(options.copy) +
+      '</p></div></div><div class="planning-group-total"><span>' +
+      planningEntryCount(options.entries.length) +
+      "</span><strong>" +
+      formatMoney(total) +
+      "</strong></div></header>" +
+      rows +
+      "</section>"
+    );
+  }
+
+  function renderPlanning(calculation) {
+    const incomeEntries = calculation.entries.filter((entry) => entry.type === "income");
+    const outgoingEntries = calculation.entries.filter((entry) => entry.type !== "income");
+    const incomeGroup = renderPlanningGroup({
+      title: "Inkomsten",
+      kicker: "Binnenkomend",
+      copy: "Salaris, teruggaven en extra inkomen in deze betaalmaand.",
+      emptyCopy: "Er staan nog geen inkomsten in deze betaalmaand.",
+      tone: "income",
+      icon: "income",
+      entries: incomeEntries,
+      cycle: calculation.cycle
+    });
+    const outgoingGroup = renderPlanningGroup({
+      title: "Uitgaven & sparen",
+      kicker: "Uitgaand",
+      copy: "Vaste lasten, losse uitgaven en geplande spaaroverboekingen.",
+      emptyCopy: "Er staan nog geen uitgaven of spaaroverboekingen in deze betaalmaand.",
+      tone: "outgoing",
+      icon: "outgoing",
+      entries: outgoingEntries,
+      cycle: calculation.cycle
+    });
 
     return (
       '<section><header class="page-header"><div><p class="eyebrow">Betaal-, overboekings- en ontvangstdatums</p><h1>Planning</h1><p class="subtle">Alle posten tussen ' +
       escapeHtml(formatCycle(calculation.cycle)) +
-      '. Verander de datum hier direct; maandelijkse posten houden daarna die dag van de maand aan.</p></div><div class="header-actions"><span class="cycle-pill">' +
+      '. Inkomsten en uitgaven staan apart; binnen ieder deel blijft alles op datum gesorteerd.</p></div><div class="header-actions"><span class="cycle-pill">' +
       escapeHtml(formatCycle(calculation.cycle)) +
-      '</span><button class="button button-primary" type="button" data-action="open-item-modal">+ Nieuwe post</button></div></header>' +
-      rows +
-      '<div class="panel" style="margin-top: 18px;"><div class="panel-body"><p class="helper-copy">Tip: werk eerst je echte rekeningsaldo bij zodra iets is afgeschreven, overgeboekt of ontvangen. Markeer de post daarna als betaald, overgeboekt of ontvangen, zodat deze niet nogmaals wordt meegerekend.</p></div></div></section>'
+      '</span><button class="button button-primary" type="button" data-action="open-item-modal">+ Nieuwe post</button></div></header><div class="planning-groups">' +
+      incomeGroup +
+      outgoingGroup +
+      '</div><aside class="planning-tip"><div><strong>Voorkom dubbel tellen</strong><p>Werk eerst je echte rekeningsaldo bij zodra iets is afgeschreven, overgeboekt of ontvangen. Markeer de post daarna als verwerkt.</p></div></aside></section>'
     );
   }
 

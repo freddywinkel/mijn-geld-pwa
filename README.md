@@ -8,6 +8,7 @@ Een volledig offline PWA voor een rustig overzicht van je betaalmaand, openstaan
 - Het dashboard toont per volledige betaalmaand de totale inkomsten, uitgaven, spaarinleg, het ingevulde spaarsaldo en wat vrij te besteden is.
 - Je vult de actuele saldi van Rabobank en Bunq zelf in.
 - Niet-betaalde uitgaven en spaaroverboekingen worden afgetrokken; verwachte inkomsten worden opgeteld.
+- Planning groepeert inkomsten apart van uitgaven en spaarinleg, met een eigen totaal per groep.
 - De app toont wat vrij te besteden is tot de volgende salarisdag, plus een gemiddeld budget per dag, twee dagen en week.
 - Rabobank is bedoeld voor vaste lasten. Bunq is voor besteedbaar geld en losse spaarpotjes.
 - De eerste setup bevat de terugkerende inkomsten, uitgaven, abonnementen en maandelijkse spaarinleg uit het financiële werkblad. Controleer bedragen en datums in Planning; wijzigingen worden niet automatisch bijgewerkt.
