@@ -1824,11 +1824,21 @@ h3 {
 }
 
 .form-field input[type="date"] {
+  -webkit-appearance: none;
+  appearance: none;
   display: block;
   inline-size: 100%;
   height: 43px;
+  min-inline-size: 0;
   min-width: 0;
+  max-inline-size: 100%;
   max-width: 100%;
+  text-align: left;
+}
+
+.form-field input[type="date"]::-webkit-date-and-time-value {
+  min-width: 0;
+  text-align: left;
 }
 
 .version-label {
