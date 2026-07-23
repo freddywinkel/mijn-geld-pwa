@@ -1175,6 +1175,7 @@
     return (
       '<article class="planning-row planning-row-' +
       (isIncome ? "income" : "outgoing") +
+      (isSaving ? " planning-row-saving" : "") +
       " " +
       (entry.paid ? "is-paid" : "") +
       '" aria-labelledby="planning-name-' +

@@ -1412,9 +1412,25 @@ h3 {
   border-left: 3px solid #edb17a;
 }
 
+.planning-row-saving {
+  border-color: #d9dcf3;
+  border-left: 3px solid #7f8aca;
+  background: #f7f7ff;
+}
+
+.planning-row-saving .planning-amount {
+  color: #4e5b99;
+}
+
 .planning-row.is-paid {
   border-color: #d9e2d4;
   background: #f5f7f3;
+}
+
+.planning-row-saving.is-paid {
+  border-color: #d9dcf3;
+  border-left-color: #7f8aca;
+  background: #f1f1f8;
 }
 
 .planning-row.is-paid .planning-name {
