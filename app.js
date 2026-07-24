@@ -61,7 +61,7 @@
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
   const appShell = document.querySelector(".app-shell");
-  const APP_VERSION = "v20";
+  const APP_VERSION = "v21";
   let activePaydayDay = 25;
   const initialData = loadData();
   activePaydayDay = initialData.settings.paydayDay;
@@ -1163,6 +1163,7 @@
       '">' +
       formatMoney(calculation.plannedPerWeek) +
       "</strong><small>vaste richtlijn voor de hele betaalmaand</small></article></div></section>" +
+      renderPaydayMonthSummary(calculation) +
       '<section class="dashboard-section" aria-labelledby="dashboard-upcoming-title">' +
       renderDashboardSectionHeading({
         id: "dashboard-upcoming-title",
@@ -1196,7 +1197,6 @@
       renderExtraIncomeDashboard(calculation) +
       renderSavingsDashboard(calculation) +
       "</div></section>" +
-      renderPaydayMonthSummary(calculation) +
       "</section>"
     );
   }
