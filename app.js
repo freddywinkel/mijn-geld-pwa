@@ -25,7 +25,9 @@
     remove: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>',
     wallet: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 7h12a3 3 0 0 1 3 3v8a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3V7.8A2.8 2.8 0 0 1 5.8 5H18"></path><path d="M16 12h5v5h-5a2.5 2.5 0 0 1 0-5Z"></path></svg>',
     close: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"></path></svg>',
+    calendar: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg>',
     income: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v14M6.5 12.5 12 18l5.5-5.5"></path></svg>',
+    saving: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"></path></svg>',
     outgoing: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20V6M6.5 11.5 12 6l5.5 5.5"></path></svg>'
   };
   const moneyFormatter = new Intl.NumberFormat("nl-NL", {
@@ -58,7 +60,7 @@
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
   const appShell = document.querySelector(".app-shell");
-  const APP_VERSION = "v16";
+  const APP_VERSION = "v18";
   let activePaydayDay = 25;
   const initialData = loadData();
   activePaydayDay = initialData.settings.paydayDay;
@@ -794,15 +796,46 @@
     );
   }
 
+  function renderDashboardSectionHeading(options) {
+    const iconClass = options.tone ? " " + options.tone : "";
+    return (
+      '<div class="dashboard-section-heading"><div class="dashboard-section-title"><span class="planning-group-icon dashboard-overview-icon' +
+      iconClass +
+      '" aria-hidden="true">' +
+      ICONS[options.icon] +
+      '</span><div><p class="planning-group-kicker">' +
+      escapeHtml(options.kicker) +
+      '</p><h2 id="' +
+      escapeHtml(options.id) +
+      '">' +
+      escapeHtml(options.title) +
+      '</h2><p class="section-copy">' +
+      escapeHtml(options.copy) +
+      "</p></div></div>" +
+      (options.action || "") +
+      "</div>"
+    );
+  }
+
   function renderPaydayMonthSummary(calculation) {
     return (
-      '<section class="payday-summary" aria-labelledby="payday-summary-title">' +
-      '<div class="payday-summary-heading"><div><p class="eyebrow">Plan voor de hele betaalmaand</p><h2 id="payday-summary-title">Van salaris tot salaris</h2><p class="section-copy">Alle geplande posten voor ' +
-      escapeHtml(formatCycle(calculation.cycle)) +
-      ". Reeds verwerkte posten blijven in deze maandtotalen staan.</p></div><span class=\"cycle-pill\">" +
-      escapeHtml(formatCycle(calculation.cycle)) +
-      "</span></div>" +
-      '<div class="payday-summary-grid">' +
+      '<section class="dashboard-section" aria-labelledby="payday-summary-title">' +
+      renderDashboardSectionHeading({
+        id: "payday-summary-title",
+        kicker: "Volledige betaalmaand",
+        title: "Van salaris tot salaris",
+        copy:
+          "Alle geplande posten voor " +
+          formatCycle(calculation.cycle) +
+          ". Reeds verwerkte posten blijven in deze maandtotalen staan.",
+        icon: "calendar",
+        tone: "is-month",
+        action:
+          '<span class="cycle-pill">' +
+          escapeHtml(formatCycle(calculation.cycle)) +
+          "</span>"
+      }) +
+      '<div class="payday-summary"><div class="payday-summary-grid">' +
       '<article class="payday-total-card"><p>Totale inkomsten</p><strong>' +
       formatMoney(calculation.cycleIncomeTotal) +
       '</strong><small>alle inkomsten in deze betaalmaand</small></article>' +
@@ -821,7 +854,7 @@
       '</strong><small>na uitgaven en spaarinleg: ' +
       formatMoney(calculation.cycleOutflowTotal) +
       "</small></article>" +
-      "</div></section>"
+      "</div></div></section>"
     );
   }
 
@@ -909,7 +942,7 @@
       return (
         '<section class="panel dashboard-action-card"><span class="dashboard-card-icon is-income" aria-hidden="true">' +
         ICONS.income +
-        '</span><div><h2>Extra inkomen</h2><p>Voeg een bonus, teruggave of andere eenmalige meevaller toe.</p></div><button class="button button-secondary button-small" type="button" data-action="goto-settings">Instellen</button></section>'
+        '</span><div><h3>Extra inkomen</h3><p>Voeg een bonus, teruggave of andere eenmalige meevaller toe.</p></div><button class="button button-secondary button-small" type="button" data-action="goto-settings">Instellen</button></section>'
       );
     }
 
@@ -920,7 +953,7 @@
         ? "Ontvangen"
         : "Nog te ontvangen";
     return (
-      '<section class="panel extra-income-card"><div class="extra-income-heading"><div><p class="eyebrow">Eenmalige meevaller</p><h2>Extra inkomen</h2><p>' +
+      '<section class="panel extra-income-card"><div class="extra-income-heading"><div><p class="eyebrow">Eenmalige meevaller</p><h3>Extra inkomen</h3><p>' +
       escapeHtml(state.data.settings.extraIncomeName) +
       " · " +
       formatMoney(state.data.settings.extraIncomeAmount) +
@@ -957,12 +990,12 @@
       return (
         '<section class="panel dashboard-action-card"><span class="dashboard-card-icon" aria-hidden="true">' +
         ICONS.wallet +
-        '</span><div><h2>Spaarpotjes</h2><p>Houd spaardoelen apart van je besteedbare geld.</p></div><button class="button button-secondary button-small" type="button" data-view="jars">Potje maken</button></section>'
+        '</span><div><h3>Spaarpotjes</h3><p>Houd spaardoelen apart van je besteedbare geld.</p></div><button class="button button-secondary button-small" type="button" data-view="jars">Potje maken</button></section>'
       );
     }
 
     return (
-      '<section class="panel savings-summary-card"><div><p class="eyebrow">Apart gehouden</p><h2>Spaarpotjes</h2><p>' +
+      '<section class="panel savings-summary-card"><div><p class="eyebrow">Apart gehouden</p><h3>Spaarpotjes</h3><p>' +
       jars.length +
       (jars.length === 1 ? " potje" : " potjes") +
       '</p></div><strong>' +
@@ -1018,6 +1051,17 @@
       ".</p></div>" +
       '<div class="header-actions"><button class="button button-secondary" type="button" data-action="open-balance-modal">Saldi bijwerken</button><button class="button button-primary" type="button" data-action="open-item-modal">+ Post toevoegen</button></div></header>' +
       renderSetupGuide() +
+      '<section class="dashboard-section dashboard-section-primary" aria-labelledby="dashboard-budget-title">' +
+      renderDashboardSectionHeading({
+        id: "dashboard-budget-title",
+        kicker: "Jouw budget",
+        title: "Wat heb je te besteden?",
+        copy: usesActualBalances
+          ? "Je actuele ruimte tot de volgende salarisdag, verdeeld over korte periodes."
+          : "Je geplande ruimte voor deze betaalmaand, verdeeld over korte periodes.",
+        icon: "wallet",
+        tone: "is-budget"
+      }) +
       '<div class="hero-grid"><article class="hero-card"><div class="hero-heading"><p class="hero-label">' +
       (usesActualBalances
         ? "Nu beschikbaar tot je volgende salaris"
@@ -1091,10 +1135,17 @@
       safeClass +
       '">' +
       formatMoney(perWeek) +
-      "</strong><small>nooit meer dan wat resteert</small></article></div>" +
-      '<section class="dashboard-section"><div class="dashboard-section-heading"><div class="planning-group-title"><span class="planning-group-icon dashboard-overview-icon" aria-hidden="true">' +
-      ICONS.outgoing +
-      '</span><div><p class="planning-group-kicker">Nu te verwerken</p><h2>Wat komt er nog aan?</h2><p class="section-copy">Open inkomsten, uitgaven en spaaroverboekingen in deze betaalmaand.</p></div></div></div><div class="dashboard-panels"><section class="panel"><header class="panel-header"><div><h3>Nog uitgaand</h3><p class="section-copy">' +
+      "</strong><small>nooit meer dan wat resteert</small></article></div></section>" +
+      '<section class="dashboard-section" aria-labelledby="dashboard-upcoming-title">' +
+      renderDashboardSectionHeading({
+        id: "dashboard-upcoming-title",
+        kicker: "Nu te verwerken",
+        title: "Wat komt er nog aan?",
+        copy: "Open inkomsten, uitgaven en spaaroverboekingen in deze betaalmaand.",
+        icon: "outgoing",
+        tone: "is-upcoming"
+      }) +
+      '<div class="dashboard-panels"><section class="panel"><header class="panel-header"><div><h3>Nog uitgaand</h3><p class="section-copy">' +
       formatMoney(calculation.outstandingOutgoings) +
       " staat nog gepland.</p></div><button class=\"text-button\" type=\"button\" data-action=\"goto-planning\">Alles bekijken</button></header><div class=\"panel-body\">" +
       renderOverviewRows(outgoingEntries, "Nog geen uitgaven of spaaroverboekingen in deze betaalmaand.") +
@@ -1102,13 +1153,35 @@
       formatMoney(calculation.expectedIncome) +
       ' staat nog open.</p></div><button class="text-button" type="button" data-action="goto-planning">Alles bekijken</button></header><div class="panel-body">' +
       renderOverviewRows(incomeEntries, "Nog geen verwachte inkomsten ingepland.") +
-      '</div></section></div></section><div class="dashboard-secondary-grid"><section class="panel account-overview"><header class="panel-header"><div><h2>Rekeningen</h2><p class="section-copy">Van huidig saldo naar verwachte eindstand.</p></div><button class="text-button" type="button" data-action="open-balance-modal">Saldi bijwerken</button></header><div class="panel-body"><div class="account-grid">' +
+      '</div></section></div></section>' +
+      '<section class="dashboard-section" aria-labelledby="dashboard-accounts-title">' +
+      renderDashboardSectionHeading({
+        id: "dashboard-accounts-title",
+        kicker: "Saldi & verwachting",
+        title: "Hoe staan je rekeningen ervoor?",
+        copy: "Van je huidige saldo naar de verwachte eindstand na openstaande posten.",
+        icon: "wallet",
+        tone: "is-accounts",
+        action:
+          '<button class="button button-secondary button-small" type="button" data-action="open-balance-modal">Saldi bijwerken</button>'
+      }) +
+      '<section class="panel account-overview"><div class="panel-body"><div class="account-grid">' +
       renderAccountCard("rabobank", calculation) +
       renderAccountCard("bunq", calculation) +
-      "</div></div></section><div class=\"stack\">" +
+      "</div></div></section></section>" +
+      '<section class="dashboard-section" aria-labelledby="dashboard-extras-title">' +
+      renderDashboardSectionHeading({
+        id: "dashboard-extras-title",
+        kicker: "Apart bijhouden",
+        title: "Extra inkomen & sparen",
+        copy: "Beheer eenmalige meevallers en geld dat je bewust apart houdt.",
+        icon: "saving",
+        tone: "is-extras"
+      }) +
+      '<div class="dashboard-panels dashboard-action-grid">' +
       renderExtraIncomeDashboard(calculation) +
       renderSavingsDashboard(calculation) +
-      "</div></div>" +
+      "</div></section>" +
       renderPaydayMonthSummary(calculation) +
       "</section>"
     );
@@ -1174,8 +1247,7 @@
 
     return (
       '<article class="planning-row planning-row-' +
-      (isIncome ? "income" : "outgoing") +
-      (isSaving ? " planning-row-saving" : "") +
+      (isIncome ? "income" : isSaving ? "saving" : "outgoing") +
       " " +
       (entry.paid ? "is-paid" : "") +
       '" aria-labelledby="planning-name-' +
@@ -1232,6 +1304,9 @@
   }
 
   function renderPlanningGroup(options) {
+    const addTypeAttribute = options.type
+      ? ' data-type="' + escapeHtml(options.type) + '"'
+      : "";
     const rows = options.entries.length
       ? '<div class="planning-list">' +
         options.entries
@@ -1240,7 +1315,9 @@
         "</div>"
       : '<div class="planning-group-empty"><p>' +
         escapeHtml(options.emptyCopy) +
-        '</p><button class="button button-secondary button-small" type="button" data-action="open-item-modal">Post toevoegen</button></div>';
+        '</p><button class="button button-secondary button-small" type="button" data-action="open-item-modal"' +
+        addTypeAttribute +
+        ">Post toevoegen</button></div>";
     const total = options.entries.reduce(
       (sum, entry) => sum + numberValue(entry.amount, 0),
       0
@@ -1317,7 +1394,8 @@
 
   function renderPlanning(calculation) {
     const incomeEntries = calculation.entries.filter((entry) => entry.type === "income");
-    const outgoingEntries = calculation.entries.filter((entry) => entry.type !== "income");
+    const savingEntries = calculation.entries.filter((entry) => entry.type === "saving");
+    const expenseEntries = calculation.entries.filter((entry) => entry.type === "expense");
     const incomeGroup = renderPlanningGroup({
       title: "Inkomsten",
       kicker: "Binnenkomend",
@@ -1325,28 +1403,42 @@
       emptyCopy: "Er staan nog geen inkomsten in deze betaalmaand.",
       tone: "income",
       icon: "income",
+      type: "income",
       entries: incomeEntries,
       cycle: calculation.cycle
     });
-    const outgoingGroup = renderPlanningGroup({
-      title: "Uitgaven & sparen",
-      kicker: "Uitgaand",
-      copy: "Vaste lasten, losse uitgaven en geplande spaaroverboekingen.",
-      emptyCopy: "Er staan nog geen uitgaven of spaaroverboekingen in deze betaalmaand.",
+    const savingGroup = renderPlanningGroup({
+      title: "Sparen",
+      kicker: "Eerst apart zetten",
+      copy: "Geplande overboekingen naar je spaarpotjes in deze betaalmaand.",
+      emptyCopy: "Er staat nog geen spaarinleg in deze betaalmaand.",
+      tone: "saving",
+      icon: "saving",
+      type: "saving",
+      entries: savingEntries,
+      cycle: calculation.cycle
+    });
+    const expenseGroup = renderPlanningGroup({
+      title: "Uitgaven",
+      kicker: "Daarna betalen",
+      copy: "Vaste lasten en losse uitgaven in deze betaalmaand.",
+      emptyCopy: "Er staan nog geen uitgaven in deze betaalmaand.",
       tone: "outgoing",
       icon: "outgoing",
-      entries: outgoingEntries,
+      type: "expense",
+      entries: expenseEntries,
       cycle: calculation.cycle
     });
 
     return (
       '<section><header class="page-header"><div><p class="eyebrow">Betaal-, overboekings- en ontvangstdatums</p><h1>Planning</h1><p class="subtle">Alle posten tussen ' +
       escapeHtml(formatCycle(calculation.cycle)) +
-      '. Inkomsten en uitgaven staan apart; binnen ieder deel blijft alles op datum gesorteerd.</p></div><div class="header-actions"><span class="cycle-pill">' +
+      '. Inkomsten, sparen en uitgaven staan los van elkaar; binnen ieder deel blijft alles op datum gesorteerd.</p></div><div class="header-actions"><span class="cycle-pill">' +
       escapeHtml(formatCycle(calculation.cycle)) +
       '</span><button class="button button-primary" type="button" data-action="open-item-modal">+ Nieuwe post</button></div></header><div class="planning-groups">' +
       incomeGroup +
-      outgoingGroup +
+      savingGroup +
+      expenseGroup +
       "</div>" +
       renderOutsideCycleItems(calculation.cycle) +
       '<aside class="planning-tip"><div><strong>Voorkom dubbel tellen</strong><p>Werk eerst je echte rekeningsaldo bij zodra iets is afgeschreven, overgeboekt of ontvangen. Markeer de post daarna als verwerkt.</p></div></aside></section>'

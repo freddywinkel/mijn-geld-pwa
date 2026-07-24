@@ -823,10 +823,18 @@ h3 {
 }
 
 .dashboard-section {
-  margin-top: 4px;
+  margin-top: 32px;
+}
+
+.dashboard-section-primary {
+  margin-top: 0;
 }
 
 .dashboard-section-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
   margin-bottom: 15px;
 }
 
@@ -835,9 +843,51 @@ h3 {
   margin-bottom: 0;
 }
 
+.dashboard-section-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 13px;
+  min-width: 0;
+}
+
+.dashboard-section-title .section-copy {
+  max-width: 720px;
+  margin-top: 4px;
+}
+
+.dashboard-section-heading > .button,
+.dashboard-section-heading > .cycle-pill {
+  flex: 0 0 auto;
+}
+
 .dashboard-overview-icon {
   background: #fff0e5;
   color: #a45d32;
+}
+
+.dashboard-overview-icon.is-budget {
+  background: #dff1dc;
+  color: #286541;
+}
+
+.dashboard-overview-icon.is-upcoming {
+  background: #fff0e5;
+  color: #a45d32;
+}
+
+.dashboard-overview-icon.is-accounts {
+  background: #e3f0ec;
+  color: #285f54;
+}
+
+.dashboard-overview-icon.is-extras {
+  background: #e8eaff;
+  color: #4e5b99;
+}
+
+.dashboard-overview-icon.is-month {
+  background: #f1eadc;
+  color: #806137;
 }
 
 .dashboard-panels,
@@ -869,7 +919,7 @@ h3 {
   justify-self: start;
 }
 
-.dashboard-action-card h2,
+.dashboard-action-card h3,
 .dashboard-action-card p {
   margin-bottom: 0;
 }
@@ -910,7 +960,7 @@ h3 {
   padding: 20px 22px;
 }
 
-.savings-summary-card h2,
+.savings-summary-card h3,
 .savings-summary-card p {
   margin-bottom: 0;
 }
@@ -964,6 +1014,10 @@ h3 {
 
 .panel-body {
   padding: 15px 22px 20px;
+}
+
+.account-overview > .panel-body {
+  padding-top: 22px;
 }
 
 .overview-list {
@@ -1182,7 +1236,7 @@ h3 {
   min-width: 0;
 }
 
-.extra-income-card h2 {
+.extra-income-card h3 {
   margin-bottom: 4px;
 }
 
@@ -1335,6 +1389,11 @@ h3 {
   color: #286541;
 }
 
+.planning-group-saving .planning-group-icon {
+  background: #e8eaff;
+  color: #4e5b99;
+}
+
 .planning-group-outgoing .planning-group-icon {
   background: #fff0e5;
   color: #a45d32;
@@ -1368,6 +1427,10 @@ h3 {
 
 .planning-group-income .planning-group-total strong {
   color: var(--green-dark);
+}
+
+.planning-group-saving .planning-group-total strong {
+  color: #4e5b99;
 }
 
 .planning-group-outgoing .planning-group-total strong {
@@ -2268,7 +2331,9 @@ h3 {
   }
 
   .dashboard-section-heading {
-    margin-top: 4px;
+    align-items: stretch;
+    flex-direction: column;
+    margin-top: 0;
   }
 
   .hero-card {
@@ -2402,6 +2467,12 @@ h3 {
     justify-content: center;
   }
 
+  .dashboard-section-heading > .button,
+  .dashboard-section-heading > .cycle-pill {
+    width: 100%;
+    justify-content: center;
+  }
+
   .setup-guide ol {
     display: grid;
   }
@@ -2513,6 +2584,10 @@ h3 {
 
   .cycle-pill {
     margin-top: 14px;
+  }
+
+  .dashboard-section-heading > .cycle-pill {
+    margin-top: 0;
   }
 
   .modal-root {

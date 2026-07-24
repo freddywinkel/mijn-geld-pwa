@@ -6,9 +6,10 @@ Een volledig offline PWA voor een rustig overzicht van je betaalmaand, openstaan
 
 - Je kiest zelf je salarisdag; valt die dag in het weekend, dan begint de betaalmaand op de vrijdag ervoor.
 - Het dashboard begint met wat nu beschikbaar is en toont daaronder openstaande posten, rekeningprognoses en de planning voor de volledige betaalmaand.
+- Het Overzicht gebruikt schermbrede sectiekoppen voor budget, komende posten, rekeningen, extra inkomen en de volledige betaalmaand.
 - Je geeft twee rekeningen zelf een herkenbare naam en vult de actuele saldi handmatig in.
 - Niet-betaalde uitgaven en spaaroverboekingen worden afgetrokken; verwachte inkomsten worden opgeteld.
-- Planning groepeert inkomsten apart van uitgaven en spaarinleg, met een eigen totaal per groep.
+- Planning toont inkomsten, sparen en uitgaven in drie losse blokken, met sparen vóór de uitgaven en een eigen totaal per groep.
 - De app toont wat vrij te besteden is tot de volgende salarisdag, plus een budget per dag, twee dagen en maximaal zeven dagen. Die korte periodes worden nooit hoger dan het totaal dat nog resteert.
 - Een nieuwe installatie begint leeg en bevat geen persoonlijke voorbeeldbedragen. De korte checklist helpt met saldi, inkomsten en uitgaven.
 - Je kunt een eenmalig extra inkomen instellen met een eigen naam, bedrag, datum en doelrekening. Het kan net als andere inkomsten als ontvangen worden gemarkeerd.
