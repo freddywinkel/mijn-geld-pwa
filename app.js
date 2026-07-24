@@ -28,7 +28,8 @@
     calendar: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><rect x="3" y="5" width="18" height="16" rx="2"></rect><path d="M16 3v4M8 3v4M3 10h18"></path></svg>',
     income: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v14M6.5 12.5 12 18l5.5-5.5"></path></svg>',
     saving: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3v13M7 11l5 5 5-5M5 21h14"></path></svg>',
-    outgoing: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20V6M6.5 11.5 12 6l5.5 5.5"></path></svg>'
+    outgoing: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 20V6M6.5 11.5 12 6l5.5 5.5"></path></svg>',
+    settings: '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M4 7h10M18 7h2M4 17h2M10 17h10M14 4v6M6 14v6"></path><circle cx="14" cy="7" r="2"></circle><circle cx="6" cy="17" r="2"></circle></svg>'
   };
   const moneyFormatter = new Intl.NumberFormat("nl-NL", {
     style: "currency",
@@ -60,7 +61,7 @@
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
   const appShell = document.querySelector(".app-shell");
-  const APP_VERSION = "v18";
+  const APP_VERSION = "v19";
   let activePaydayDay = 25;
   const initialData = loadData();
   activePaydayDay = initialData.settings.paydayDay;
@@ -1304,6 +1305,7 @@
   }
 
   function renderPlanningGroup(options) {
+    const headingId = "planning-" + options.tone + "-title";
     const addTypeAttribute = options.type
       ? ' data-type="' + escapeHtml(options.type) + '"'
       : "";
@@ -1324,23 +1326,30 @@
     );
 
     return (
-      '<section class="planning-group planning-group-' +
+      '<section class="dashboard-section planning-section planning-section-' +
       options.tone +
-      '"><header class="planning-group-header"><div class="planning-group-title"><span class="planning-group-icon" aria-hidden="true">' +
-      ICONS[options.icon] +
-      '</span><div><p class="planning-group-kicker">' +
-      escapeHtml(options.kicker) +
-      "</p><h2>" +
-      escapeHtml(options.title) +
-      '</h2><p class="section-copy">' +
-      escapeHtml(options.copy) +
-      '</p></div></div><div class="planning-group-total"><span>' +
-      planningEntryCount(options.entries.length) +
-      "</span><strong>" +
-      formatMoney(total) +
-      "</strong></div></header>" +
+      '" aria-labelledby="' +
+      headingId +
+      '">' +
+      renderDashboardSectionHeading({
+        id: headingId,
+        kicker: options.kicker,
+        title: options.title,
+        copy: options.copy,
+        icon: options.icon,
+        tone: options.headingTone,
+        action:
+          '<div class="planning-group-total"><span>' +
+          planningEntryCount(options.entries.length) +
+          "</span><strong>" +
+          formatMoney(total) +
+          "</strong></div>"
+      }) +
+      '<div class="planning-group planning-group-' +
+      options.tone +
+      '">' +
       rows +
-      "</section>"
+      "</div></section>"
     );
   }
 
@@ -1402,6 +1411,7 @@
       copy: "Salaris, teruggaven en extra inkomen in deze betaalmaand.",
       emptyCopy: "Er staan nog geen inkomsten in deze betaalmaand.",
       tone: "income",
+      headingTone: "is-budget",
       icon: "income",
       type: "income",
       entries: incomeEntries,
@@ -1413,6 +1423,7 @@
       copy: "Geplande overboekingen naar je spaarpotjes in deze betaalmaand.",
       emptyCopy: "Er staat nog geen spaarinleg in deze betaalmaand.",
       tone: "saving",
+      headingTone: "is-extras",
       icon: "saving",
       type: "saving",
       entries: savingEntries,
@@ -1424,6 +1435,7 @@
       copy: "Vaste lasten en losse uitgaven in deze betaalmaand.",
       emptyCopy: "Er staan nog geen uitgaven in deze betaalmaand.",
       tone: "outgoing",
+      headingTone: "is-upcoming",
       icon: "outgoing",
       type: "expense",
       entries: expenseEntries,
@@ -1457,9 +1469,9 @@
     const remaining = Math.max(0, jar.target - jar.balance);
 
     return (
-      '<article class="jar-card"><div class="jar-icon" aria-hidden="true">' + ICONS.wallet + '</div><h2>' +
+      '<article class="jar-card"><div class="jar-icon" aria-hidden="true">' + ICONS.wallet + '</div><h3>' +
       escapeHtml(jar.name) +
-      '</h2><p class="jar-kicker">Gespaard</p><p class="jar-amount">' +
+      '</h3><p class="jar-kicker">Gespaard</p><p class="jar-amount">' +
       formatMoney(jar.balance) +
       '</p><div class="jar-stats"><span>' +
       (jar.target ? "Nog " + formatMoney(remaining) : "Geen doelbedrag") +
@@ -1488,20 +1500,42 @@
   function renderJars(calculation) {
     const jarContent = state.data.savingsJars.length
       ? '<div class="jars-grid">' + state.data.savingsJars.map(renderJarCard).join("") + "</div>"
-      : '<section class="panel"><div class="empty-state"><div><p>Maak een potje voor ieder spaardoel dat je apart wilt zien. Het geld in je potjes telt niet mee als vrij besteedbaar.</p><button class="button button-primary" type="button" data-action="open-jar-modal">Eerste spaarpotje</button></div></div></section>';
+      : '<div class="panel"><div class="empty-state"><div><p>Maak een potje voor ieder spaardoel dat je apart wilt zien. Het geld in je potjes telt niet mee als vrij besteedbaar.</p><button class="button button-primary" type="button" data-action="open-jar-modal">Eerste spaarpotje</button></div></div></div>';
 
     return (
-      '<section><header class="page-header"><div><p class="eyebrow">Spaardoelen</p><h1>Spaarpotjes</h1><p class="subtle">Je potjes blijven bewust apart van je besteedbare geld. Totaal in spaarpotjes: ' +
-      formatMoney(calculation.savingsBalance) +
-      ".</p></div><div class=\"header-actions\"><button class=\"button button-primary\" type=\"button\" data-action=\"open-jar-modal\">+ Spaarpotje</button></div></header>" +
+      '<section><header class="page-header"><div><p class="eyebrow">Spaardoelen</p><h1>Spaarpotjes</h1><p class="subtle">Houd elk spaardoel apart en zie wat er al voor klaarstaat.</p></div></header>' +
+      '<section class="dashboard-section dashboard-section-primary" aria-labelledby="jars-overview-title">' +
+      renderDashboardSectionHeading({
+        id: "jars-overview-title",
+        kicker: "Doelen & saldo",
+        title: "Jouw spaarpotjes",
+        copy:
+          "Totaal apart gehouden: " +
+          formatMoney(calculation.savingsBalance) +
+          ". Dit telt niet mee als vrij besteedbaar geld.",
+        icon: "wallet",
+        tone: "is-budget",
+        action:
+          '<button class="button button-primary button-small" type="button" data-action="open-jar-modal">+ Spaarpotje</button>'
+      }) +
       jarContent +
-      '<div class="section-heading"><div><h2>Geplande spaaroverboekingen</h2><p class="section-copy">Deze worden in je planning afgetrokken van je besteedbare geld.</p></div><button class="text-button" type="button" data-action="goto-planning">Planning openen</button></div>' +
-      '<section class="panel"><div class="panel-body">' +
+      '</section><section class="dashboard-section" aria-labelledby="jars-planning-title">' +
+      renderDashboardSectionHeading({
+        id: "jars-planning-title",
+        kicker: "Deze betaalmaand",
+        title: "Geplande spaaroverboekingen",
+        copy: "Deze worden in Planning afgetrokken van je besteedbare geld.",
+        icon: "saving",
+        tone: "is-extras",
+        action:
+          '<button class="button button-secondary button-small" type="button" data-action="goto-planning">Planning openen</button>'
+      }) +
+      '<div class="panel"><div class="panel-body">' +
       renderOverviewRows(
         calculation.unpaidEntries.filter((entry) => entry.type === "saving"),
         "Er staan geen geplande spaaroverboekingen in deze betaalmaand."
       ) +
-      "</div></section></section>"
+      "</div></div></section></section>"
     );
   }
 
@@ -1510,9 +1544,16 @@
     const freshness = balanceFreshness();
     return (
       '<section><header class="page-header"><div><p class="eyebrow">Privé & offline</p><h1>Instellingen</h1><p class="subtle">Je gegevens worden alleen lokaal in deze browser opgeslagen. Er is geen bankkoppeling en geen account nodig.</p></div></header>' +
-      '<div class="settings-grid"><section class="panel settings-panel full settings-profile-panel"><div class="settings-panel-heading"><span class="dashboard-card-icon" aria-hidden="true">' +
-      ICONS.wallet +
-      '</span><div><p class="eyebrow">Persoonlijk instellen</p><h2>Rekeningen & salarisdag</h2><p class="section-copy">Geef je rekeningen herkenbare namen en vul de actuele saldi in.</p></div></div><form id="settings-balance-form"><div class="field-grid account-settings-grid"><div class="form-field"><label for="setting-rabobank-name">Naam rekening 1</label><input id="setting-rabobank-name" name="accountNameRabobank" maxlength="40" required value="' +
+      '<section class="dashboard-section dashboard-section-primary" aria-labelledby="settings-accounts-title">' +
+      renderDashboardSectionHeading({
+        id: "settings-accounts-title",
+        kicker: "Persoonlijk instellen",
+        title: "Rekeningen & salarisdag",
+        copy: "Geef je rekeningen herkenbare namen en vul de actuele saldi in.",
+        icon: "wallet",
+        tone: "is-accounts"
+      }) +
+      '<div class="panel settings-panel settings-profile-panel"><form id="settings-balance-form"><div class="field-grid account-settings-grid"><div class="form-field"><label for="setting-rabobank-name">Naam rekening 1</label><input id="setting-rabobank-name" name="accountNameRabobank" maxlength="40" required value="' +
       escapeHtml(accountLabel("rabobank")) +
       '"></div><div class="form-field"><label for="setting-rabobank">Saldo rekening 1</label><input id="setting-rabobank" name="rabobank" type="text" inputmode="decimal" value="' +
       escapeHtml(state.data.balances.rabobank) +
@@ -1524,8 +1565,17 @@
       state.data.settings.paydayDay +
       '"><span class="helper-copy">Weekend? Dan gebruikt de app de vrijdag ervoor.</span></div></div><div class="form-actions"><button class="button button-primary" id="settings-save-button" type="submit">Instellingen opslaan</button><span class="balance-form-status">' +
       escapeHtml(freshness.copy) +
-      "</span></div></form></section>" +
-      '<section class="panel settings-panel"><h2>Extra inkomen</h2><p class="section-copy">Stel een eenmalig extra inkomen in. In Planning kun je het daarna als ontvangen markeren.</p><form id="extra-income-form"><div class="field-grid"><div class="form-field full"><label for="extra-income-name">Naam</label><input id="extra-income-name" name="extraIncomeName" required maxlength="80" placeholder="Bijvoorbeeld: teruggave of bonus" value="' +
+      "</span></div></form></div></section>" +
+      '<section class="dashboard-section" aria-labelledby="settings-extra-income-title">' +
+      renderDashboardSectionHeading({
+        id: "settings-extra-income-title",
+        kicker: "Eenmalige meevaller",
+        title: "Extra inkomen",
+        copy: "Stel een bedrag en ontvangstdatum in. In Planning kun je het daarna als ontvangen markeren.",
+        icon: "income",
+        tone: "is-budget"
+      }) +
+      '<div class="panel settings-panel"><form id="extra-income-form"><div class="field-grid"><div class="form-field full"><label for="extra-income-name">Naam</label><input id="extra-income-name" name="extraIncomeName" required maxlength="80" placeholder="Bijvoorbeeld: teruggave of bonus" value="' +
       escapeHtml(state.data.settings.extraIncomeName) +
       '"></div><div class="form-field"><label for="extra-income-amount">Bedrag</label><input id="extra-income-amount" name="extraIncomeAmount" required type="text" inputmode="decimal" value="' +
       escapeHtml(state.data.settings.extraIncomeAmount) +
@@ -1543,14 +1593,33 @@
       (!state.data.settings.extraIncomeEnabled ? " selected" : "") +
       '>Nee, nog niet</option><option value="true"' +
       (state.data.settings.extraIncomeEnabled ? " selected" : "") +
-      '>Ja, in deze betaalmaand</option></select></div></div><div class="form-actions"><button class="button button-primary" id="extra-income-save-button" type="submit">Extra inkomen opslaan</button></div></form></section>' +
-      '<section class="panel settings-panel full"><h2>Zo berekent de app je budget</h2><ul class="info-list"><li><span>1</span><div>De betaalmaand start op dag ' +
+      '>Ja, in deze betaalmaand</option></select></div></div><div class="form-actions"><button class="button button-primary" id="extra-income-save-button" type="submit">Extra inkomen opslaan</button></div></form></div></section>' +
+      '<section class="dashboard-section" aria-labelledby="settings-calculation-title">' +
+      renderDashboardSectionHeading({
+        id: "settings-calculation-title",
+        kicker: "Uitleg",
+        title: "Zo berekent de app je budget",
+        copy: "De vier regels achter je betaalmaand, actuele ruimte en spaarpotjes.",
+        icon: "calendar",
+        tone: "is-month"
+      }) +
+      '<div class="panel settings-panel"><ul class="info-list"><li><span>1</span><div>De betaalmaand start op dag ' +
       state.data.settings.paydayDay +
       ' en loopt tot de volgende salarisdag. In het weekend gebruikt de app de vrijdag ervoor.</div></li><li><span>2</span><div>Het maandoverzicht telt alle inkomsten, uitgaven en spaarinleg in die volledige betaalmaand mee, ook als ze al zijn verwerkt.</div></li><li><span>3</span><div>Het actuele bedrag gebruikt de saldi van ' +
       escapeHtml(accountLabel("rabobank")) +
       " en " +
       escapeHtml(accountLabel("bunq")) +
-      ', trekt openstaande uitgaven en spaaroverboekingen af en telt nog te ontvangen inkomsten erbij op.</div></li><li><span>4</span><div>Je spaarpotjes blijven apart. Hun ingevulde saldi tellen niet mee als vrij besteedbaar geld.</div></li></ul></section><div class="settings-group-title"><p class="eyebrow">App & gegevens</p><h2>Beheer en updates</h2></div>' +
+      ', trekt openstaande uitgaven en spaaroverboekingen af en telt nog te ontvangen inkomsten erbij op.</div></li><li><span>4</span><div>Je spaarpotjes blijven apart. Hun ingevulde saldi tellen niet mee als vrij besteedbaar geld.</div></li></ul></div></section>' +
+      '<section class="dashboard-section" aria-labelledby="settings-data-title">' +
+      renderDashboardSectionHeading({
+        id: "settings-data-title",
+        kicker: "App & gegevens",
+        title: "Beheer en updates",
+        copy: "Maak een reservekopie, controleer de appversie of begin opnieuw.",
+        icon: "settings",
+        tone: "is-extras"
+      }) +
+      '<div class="settings-grid">' +
       '<section class="panel settings-panel"><h3>Reservekopie</h3><p class="section-copy">Bewaar een kopie voordat je van telefoon of browser wisselt.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="export-data">Exporteer gegevens</button><button class="button button-secondary" type="button" data-action="trigger-import">Importeer gegevens</button><input class="is-hidden" id="import-file" type="file" accept="application/json" data-action="import-data" tabindex="-1" aria-hidden="true"></div></section>' +
       '<section class="panel settings-panel"><h3>App-update</h3><p class="section-copy">Controleer handmatig of er een nieuwe versie van Mijn Geld klaarstaat. Je lokale gegevens blijven bewaard.</p><div class="form-actions"><button class="button button-secondary" type="button" data-action="check-for-updates"' +
       (state.isCheckingForUpdates ? " disabled" : "") +
@@ -1559,7 +1628,7 @@
       '</button><span class="version-label">Versie ' +
       APP_VERSION +
       "</span></div></section>" +
-      '<section class="panel settings-panel"><h3>Opnieuw beginnen</h3><p class="section-copy">Dit wist alleen de lokale gegevens in deze app. Je bankgegevens blijven onaangeraakt.</p><div class="form-actions"><button class="button button-danger" type="button" data-action="clear-data">Lokale gegevens wissen</button></div></section></div></section>'
+      '<section class="panel settings-panel"><h3>Opnieuw beginnen</h3><p class="section-copy">Dit wist alleen de lokale gegevens in deze app. Je bankgegevens blijven onaangeraakt.</p><div class="form-actions"><button class="button button-danger" type="button" data-action="clear-data">Lokale gegevens wissen</button></div></section></div></section></section>'
     );
   }
 
