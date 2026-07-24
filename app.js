@@ -61,7 +61,7 @@
   const toast = document.getElementById("toast");
   const updatePrompt = document.getElementById("update-prompt");
   const appShell = document.querySelector(".app-shell");
-  const APP_VERSION = "v19";
+  const APP_VERSION = "v20";
   let activePaydayDay = 25;
   const initialData = loadData();
   activePaydayDay = initialData.settings.paydayDay;
@@ -546,6 +546,9 @@
       .reduce((total, entry) => total + entry.amount, 0);
     const cycleOutflowTotal = cycleExpenseTotal + cycleSavingsContribution;
     const cycleSpendable = cycleIncomeTotal - cycleOutflowTotal;
+    const plannedPerDay = cycleSpendable / cycle.totalDays;
+    const plannedPerTwoDays = plannedPerDay * Math.min(2, cycle.totalDays);
+    const plannedPerWeek = plannedPerDay * Math.min(7, cycle.totalDays);
     const balances = {
       rabobank: numberValue(state.data.balances.rabobank, 0),
       bunq: numberValue(state.data.balances.bunq, 0)
@@ -576,6 +579,9 @@
     const outstandingOutgoings = outgoingByAccount.rabobank + outgoingByAccount.bunq;
     const expectedIncome = incomeByAccount.rabobank + incomeByAccount.bunq;
     const safeToSpend = forecastByAccount.rabobank + forecastByAccount.bunq;
+    const actualPerDay = safeToSpend / cycle.daysLeft;
+    const actualPerTwoDays = actualPerDay * Math.min(2, cycle.daysLeft);
+    const actualPerWeek = actualPerDay * Math.min(7, cycle.daysLeft);
     const savingsBalance = state.data.savingsJars.reduce(
       (total, jar) => total + numberValue(jar.balance, 0),
       0
@@ -590,6 +596,9 @@
       cycleSavingsContribution,
       cycleOutflowTotal,
       cycleSpendable,
+      plannedPerDay,
+      plannedPerTwoDays,
+      plannedPerWeek,
       balances,
       forecastByAccount,
       outgoingByAccount,
@@ -597,10 +606,10 @@
       outstandingOutgoings,
       expectedIncome,
       safeToSpend,
-      savingsBalance,
-      perDay: safeToSpend / cycle.daysLeft,
-      perTwoDays: (safeToSpend / cycle.daysLeft) * Math.min(2, cycle.daysLeft),
-      perWeek: (safeToSpend / cycle.daysLeft) * Math.min(7, cycle.daysLeft)
+      actualPerDay,
+      actualPerTwoDays,
+      actualPerWeek,
+      savingsBalance
     };
   }
 
@@ -691,10 +700,6 @@
     return null;
   }
 
-  function hasNoSetup() {
-    return !state.data.hasSetBalances;
-  }
-
   function typeTag(entry) {
     return (
       '<span class="tag ' +
@@ -778,9 +783,9 @@
     const forecast = calculation.forecastByAccount[account];
     return (
       '<article class="account-card">' +
-      '<div class="account-card-top"><h3>' +
+      '<div class="account-card-top"><h4>' +
       escapeHtml(accountLabel(account)) +
-      '</h3><button class="text-button" type="button" data-action="open-balance-modal">Wijzig</button></div>' +
+      '</h4><button class="text-button" type="button" data-action="open-balance-modal">Wijzig</button></div>' +
       '<div class="account-forecast"><div><span>Huidig</span><strong class="' +
       valueClass(currentBalance) +
       '">' +
@@ -852,26 +857,23 @@
       valueClass(calculation.cycleSpendable) +
       '">' +
       formatMoney(calculation.cycleSpendable) +
-      '</strong><small>na uitgaven en spaarinleg: ' +
+      '</strong><small>na ' +
       formatMoney(calculation.cycleOutflowTotal) +
-      "</small></article>" +
+      " aan uitgaven en spaarinleg</small></article>" +
       "</div></div></section>"
     );
   }
 
   function renderSetupGuide() {
-    const hasBalances = state.data.hasSetBalances;
     const hasIncome = state.data.items.some((item) => item.type === "income");
     const hasOutgoings = state.data.items.some((item) => item.type !== "income");
-    if (hasBalances && hasIncome && hasOutgoings) {
+    if (hasIncome && hasOutgoings) {
       return "";
     }
 
-    const nextAction = !hasBalances
-      ? '<button class="button button-primary" type="button" data-action="open-balance-modal">Saldi invullen</button>'
-      : !hasIncome
-        ? '<button class="button button-primary" type="button" data-action="open-item-modal" data-type="income">Inkomst toevoegen</button>'
-        : '<button class="button button-primary" type="button" data-action="open-item-modal" data-type="expense">Uitgave toevoegen</button>';
+    const nextAction = !hasIncome
+      ? '<button class="button button-primary" type="button" data-action="open-item-modal" data-type="income">Inkomst toevoegen</button>'
+      : '<button class="button button-primary" type="button" data-action="open-item-modal" data-type="expense">Uitgave toevoegen</button>';
     const step = (done, number, title, copy) =>
       '<li class="' +
       (done ? "is-done" : "") +
@@ -887,10 +889,9 @@
       "</small></div></li>";
 
     return (
-      '<section class="setup-guide" aria-labelledby="setup-title"><div><p class="eyebrow">Eenmalig instellen</p><h2 id="setup-title">Maak je overzicht compleet</h2><ol>' +
-      step(hasBalances, 1, "Actuele saldi", "Wat staat er nu op je rekeningen?") +
-      step(hasIncome, 2, "Inkomsten", "Voeg salaris en andere inkomsten toe.") +
-      step(hasOutgoings, 3, "Uitgaven & sparen", "Plan vaste lasten en spaarinleg.") +
+      '<section class="setup-guide" aria-labelledby="setup-title"><div><p class="eyebrow">Planning instellen</p><h2 id="setup-title">Maak je planning compleet</h2><ol>' +
+      step(hasIncome, 1, "Inkomsten", "Voeg salaris en andere inkomsten toe.") +
+      step(hasOutgoings, 2, "Uitgaven & sparen", "Plan vaste lasten en spaarinleg.") +
       "</ol></div>" +
       nextAction +
       "</section>"
@@ -899,35 +900,17 @@
 
   function renderDashboardAlerts(calculation) {
     const alerts = [];
-    const negativeAccounts = Object.keys(calculation.forecastByAccount).filter(
-      (account) => calculation.forecastByAccount[account] < 0
-    );
     const overdue = calculation.unpaidEntries.filter((entry) => {
       const status = dateStatus(entry.occurrence);
       return status && status.tone === "overdue";
     });
-    const freshness = balanceFreshness();
 
-    if (state.data.hasSetBalances && negativeAccounts.length) {
-      alerts.push(
-        '<div class="dashboard-alert is-danger"><strong>Rekening dreigt negatief te worden</strong><span>' +
-          negativeAccounts.map((account) => escapeHtml(accountLabel(account))).join(" en ") +
-          " komt volgens de openstaande posten onder nul.</span></div>"
-      );
-    }
     if (overdue.length) {
       alerts.push(
         '<div class="dashboard-alert is-warning"><strong>' +
           overdue.length +
           (overdue.length === 1 ? " openstaande post is te laat" : " openstaande posten zijn te laat") +
           '</strong><button class="text-button" type="button" data-action="goto-planning">Bekijk in Planning</button></div>'
-      );
-    }
-    if (state.data.hasSetBalances && freshness.isStale) {
-      alerts.push(
-        '<div class="dashboard-alert"><strong>Controleer je saldi</strong><span>' +
-          escapeHtml(freshness.copy) +
-          '.</span><button class="text-button" type="button" data-action="open-balance-modal">Nu bijwerken</button></div>'
       );
     }
 
@@ -1009,34 +992,115 @@
     );
   }
 
+  function renderActualBudgetDashboard(calculation) {
+    const hasBalances = state.data.hasSetBalances;
+    const actionLabel = hasBalances ? "Saldi bijwerken" : "Actuele saldi invullen";
+    const sectionHeading = renderDashboardSectionHeading({
+      id: "dashboard-actual-title",
+      kicker: "Optioneel bijsturen",
+      title: "Wat blijft er nu werkelijk over?",
+      copy:
+        "Herbereken met je actuele saldi na extra of onverwachte uitgaven. Je geplande budget hierboven verandert niet.",
+      icon: "wallet",
+      tone: "is-accounts",
+      action:
+        '<button class="button button-secondary button-small" type="button" data-action="open-balance-modal">' +
+        actionLabel +
+        "</button>"
+    });
+
+    if (!hasBalances) {
+      return (
+        '<section class="dashboard-section" aria-labelledby="dashboard-actual-title">' +
+        sectionHeading +
+        '<div class="panel actual-budget-empty"><span class="dashboard-card-icon is-actual" aria-hidden="true">' +
+        ICONS.wallet +
+        '</span><div><h3>Actuele herberekening is nog uit</h3><p>Wil je weten wat je vanaf vandaag per dag, per 2 dagen en per week kunt besteden? Vul dan je echte rekeningsaldi in. Dit is optioneel en verandert je planning niet.</p></div></div></section>'
+      );
+    }
+
+    const freshness = balanceFreshness();
+    const totalBalances = calculation.balances.rabobank + calculation.balances.bunq;
+    const actualClass = valueClass(calculation.safeToSpend);
+    const negativeAccounts = Object.keys(calculation.forecastByAccount).filter(
+      (account) => calculation.forecastByAccount[account] < 0
+    );
+    const equationLabel =
+      "Actuele saldi " +
+      formatMoney(totalBalances) +
+      " plus nog te ontvangen " +
+      formatMoney(calculation.expectedIncome) +
+      " min nog uitgaand " +
+      formatMoney(calculation.outstandingOutgoings) +
+      " is actueel beschikbaar " +
+      formatMoney(calculation.safeToSpend);
+    const accountWarning = negativeAccounts.length
+      ? '<div class="actual-budget-alerts"><div class="dashboard-alert is-danger"><strong>Rekening dreigt negatief te worden</strong><span>' +
+        negativeAccounts.map((account) => escapeHtml(accountLabel(account))).join(" en ") +
+        (negativeAccounts.length === 1 ? " komt" : " komen") +
+        " volgens de openstaande posten onder nul.</span></div></div>"
+      : "";
+
+    return (
+      '<section class="dashboard-section" aria-labelledby="dashboard-actual-title">' +
+      sectionHeading +
+      '<div class="panel actual-budget-panel"><div class="actual-budget-summary"><div class="actual-budget-summary-heading"><p class="actual-budget-label">Actueel beschikbaar tot je volgende salaris</p><span class="actual-budget-status ' +
+      (freshness.isStale ? "is-stale" : "") +
+      '">' +
+      (freshness.isStale ? "Mogelijk verouderd" : "Saldi bijgewerkt") +
+      '</span></div><p class="actual-budget-amount ' +
+      actualClass +
+      '">' +
+      formatMoney(calculation.safeToSpend) +
+      '</p><p class="visually-hidden">' +
+      escapeHtml(equationLabel) +
+      '</p><div class="actual-budget-equation" aria-hidden="true"><span><small>Actuele saldi</small><strong>' +
+      formatMoney(totalBalances) +
+      '</strong></span><b aria-hidden="true">+</b><span><small>Nog te ontvangen</small><strong>' +
+      formatMoney(calculation.expectedIncome) +
+      '</strong></span><b aria-hidden="true">−</b><span><small>Nog uitgaand</small><strong>' +
+      formatMoney(calculation.outstandingOutgoings) +
+      '</strong></span></div><div class="balance-freshness ' +
+      (freshness.isStale ? "is-stale" : "") +
+      '"><span>' +
+      (freshness.datetime
+        ? '<time datetime="' + freshness.datetime + '">' + escapeHtml(freshness.copy) + "</time>"
+        : escapeHtml(freshness.copy)) +
+      '</span><button class="text-button" type="button" data-action="open-balance-modal">Bijwerken</button></div></div>' +
+      accountWarning +
+      '<div class="budget-grid actual-budget-period-grid"><article class="budget-card"><p>Per dag vanaf nu</p><strong class="' +
+      actualClass +
+      '">' +
+      formatMoney(calculation.actualPerDay) +
+      "</strong><small>verdeeld over " +
+      calculation.cycle.daysLeft +
+      (calculation.cycle.daysLeft === 1 ? " resterende dag" : " resterende dagen") +
+      '</small></article><article class="budget-card"><p>Voor 2 dagen vanaf nu</p><strong class="' +
+      actualClass +
+      '">' +
+      formatMoney(calculation.actualPerTwoDays) +
+      '</strong><small>maximaal tot je salaris</small></article><article class="budget-card"><p>Per week vanaf nu</p><strong class="' +
+      actualClass +
+      '">' +
+      formatMoney(calculation.actualPerWeek) +
+      '</strong><small>maximaal tot je salaris</small></article></div><div class="actual-accounts-header"><p class="eyebrow">Per rekening</p><h3>Saldi en verwachte eindstand</h3><p>Je huidige saldo, openstaande posten en de verwachte stand na verwerking.</p></div><div class="account-grid">' +
+      renderAccountCard("rabobank", calculation) +
+      renderAccountCard("bunq", calculation) +
+      "</div></div></section>"
+    );
+  }
+
   function renderDashboard(calculation) {
     const outgoingEntries = calculation.unpaidEntries.filter((entry) => entry.type !== "income");
     const incomeEntries = calculation.unpaidEntries.filter((entry) => entry.type === "income");
-    const usesActualBalances = !hasNoSetup();
-    const available = usesActualBalances
-      ? calculation.safeToSpend
-      : calculation.cycleSpendable;
-    const safeClass = valueClass(available);
-    const perDay = available / calculation.cycle.daysLeft;
-    const perTwoDays = perDay * Math.min(2, calculation.cycle.daysLeft);
-    const perWeek = perDay * Math.min(7, calculation.cycle.daysLeft);
-    const totalBalances = calculation.balances.rabobank + calculation.balances.bunq;
-    const freshness = balanceFreshness();
-    const equationLabel = usesActualBalances
-      ? "Saldi " +
-        formatMoney(totalBalances) +
-        " plus nog te ontvangen " +
-        formatMoney(calculation.expectedIncome) +
-        " min nog uitgaand " +
-        formatMoney(calculation.outstandingOutgoings) +
-        " is beschikbaar " +
-        formatMoney(available)
-      : "Geplande inkomsten " +
-        formatMoney(calculation.cycleIncomeTotal) +
-        " min uitgaven en sparen " +
-        formatMoney(calculation.cycleOutflowTotal) +
-        " is gepland vrij te besteden " +
-        formatMoney(available);
+    const plannedClass = valueClass(calculation.cycleSpendable);
+    const equationLabel =
+      "Geplande inkomsten " +
+      formatMoney(calculation.cycleIncomeTotal) +
+      " min uitgaven en sparen " +
+      formatMoney(calculation.cycleOutflowTotal) +
+      " is gepland vrij te besteden " +
+      formatMoney(calculation.cycleSpendable);
     const titleHour = new Date().getHours();
     const greeting = titleHour < 12 ? "Goedemorgen" : titleHour < 18 ? "Goedemiddag" : "Goedenavond";
 
@@ -1050,54 +1114,31 @@
       ". Je volgende salarisdag is " +
       escapeHtml(formatFullDate(calculation.cycle.end)) +
       ".</p></div>" +
-      '<div class="header-actions"><button class="button button-secondary" type="button" data-action="open-balance-modal">Saldi bijwerken</button><button class="button button-primary" type="button" data-action="open-item-modal">+ Post toevoegen</button></div></header>' +
+      '<div class="header-actions"><button class="button button-primary" type="button" data-action="open-item-modal">+ Post toevoegen</button></div></header>' +
       renderSetupGuide() +
       '<section class="dashboard-section dashboard-section-primary" aria-labelledby="dashboard-budget-title">' +
       renderDashboardSectionHeading({
         id: "dashboard-budget-title",
-        kicker: "Jouw budget",
-        title: "Wat heb je te besteden?",
-        copy: usesActualBalances
-          ? "Je actuele ruimte tot de volgende salarisdag, verdeeld over korte periodes."
-          : "Je geplande ruimte voor deze betaalmaand, verdeeld over korte periodes.",
+        kicker: "Je betaalmaandplan",
+        title: "Wat heb je volgens plan te besteden?",
+        copy:
+          "Je vaste fictieve richtlijn voor de hele betaalmaand. Actuele saldi en betaalstatussen veranderen deze planning niet.",
         icon: "wallet",
         tone: "is-budget"
       }) +
-      '<div class="hero-grid"><article class="hero-card"><div class="hero-heading"><p class="hero-label">' +
-      (usesActualBalances
-        ? "Nu beschikbaar tot je volgende salaris"
-        : "Gepland vrij te besteden deze betaalmaand") +
-      '</p><span class="hero-status">' +
-      (usesActualBalances ? "Actueel" : "Planning") +
-      '</span></div><p class="hero-amount ' +
-      safeClass +
+      '<div class="hero-grid"><article class="hero-card"><div class="hero-heading"><p class="hero-label">Gepland vrij te besteden deze betaalmaand</p><span class="hero-status">Planning</span></div><p class="hero-amount ' +
+      plannedClass +
       '">' +
-      formatMoney(available) +
-      '</p><div class="hero-equation" aria-label="' +
+      formatMoney(calculation.cycleSpendable) +
+      '</p><p class="visually-hidden">' +
       escapeHtml(equationLabel) +
-      '">' +
-      (usesActualBalances
-        ? '<span><small>Saldi</small><strong>' +
-          formatMoney(totalBalances) +
-          '</strong></span><b aria-hidden="true">+</b><span><small>Nog te ontvangen</small><strong>' +
-          formatMoney(calculation.expectedIncome) +
-          '</strong></span><b aria-hidden="true">−</b><span><small>Nog uitgaand</small><strong>' +
-          formatMoney(calculation.outstandingOutgoings) +
-          "</strong></span>"
-        : '<span><small>Geplande inkomsten</small><strong>' +
-          formatMoney(calculation.cycleIncomeTotal) +
-          '</strong></span><b aria-hidden="true">−</b><span><small>Uitgaven & sparen</small><strong>' +
-          formatMoney(calculation.cycleOutflowTotal) +
-          "</strong></span>") +
-      '</div><div class="hero-footer"><strong>' +
-      calculation.cycle.daysLeft +
-      " " +
-      (calculation.cycle.daysLeft === 1 ? "dag" : "dagen") +
-      ' te gaan</strong><span class="hero-dot"></span><span>' +
-      (usesActualBalances
-        ? "op basis van je saldi en openstaande posten"
-        : "vul je saldi in voor het actuele bedrag") +
-      '</span></div></article>' +
+      '</p><div class="hero-equation" aria-hidden="true"><span><small>Geplande inkomsten</small><strong>' +
+      formatMoney(calculation.cycleIncomeTotal) +
+      '</strong></span><b aria-hidden="true">−</b><span><small>Uitgaven & sparen</small><strong>' +
+      formatMoney(calculation.cycleOutflowTotal) +
+      '</strong></span></div><div class="hero-footer"><strong>Vaste richtlijn</strong><span class="hero-dot"></span><span>verdeeld over alle ' +
+      calculation.cycle.totalDays +
+      " dagen van deze betaalmaand</span></div></article>" +
       '<article class="cycle-card"><div><p>Deze betaalmaand</p><strong>' +
       escapeHtml(formatCycle(calculation.cycle)) +
       '</strong><p class="cycle-days">' +
@@ -1108,35 +1149,20 @@
       calculation.cycle.elapsedPercent +
       '\"></div></div><small>' +
       calculation.cycle.elapsedPercent +
-      '% van je betaalmaand is voorbij</small><div class="balance-freshness ' +
-      (freshness.isStale ? "is-stale" : "") +
-      '"><span>' +
-      (freshness.datetime
-        ? '<time datetime="' + freshness.datetime + '">' + escapeHtml(freshness.copy) + "</time>"
-        : escapeHtml(freshness.copy)) +
-      '</span><button class="text-button" type="button" data-action="open-balance-modal">Bijwerken</button></div></div></article></div>' +
-      renderDashboardAlerts(calculation) +
-      '<div class="budget-grid"><article class="budget-card"><p>' +
-      (usesActualBalances ? "Beschikbaar per dag" : "Gepland per dag") +
-      '</p><strong class="' +
-      safeClass +
+      '% van je betaalmaand is voorbij</small></div></article></div>' +
+      '<div class="budget-grid"><article class="budget-card"><p>Per dag volgens plan</p><strong class="' +
+      plannedClass +
       '">' +
-      formatMoney(perDay) +
-      "</strong><small>tot je volgende salaris</small></article>" +
-      '<article class="budget-card"><p>' +
-      (calculation.cycle.daysLeft < 2 ? "Tot je salaris" : "Voor 2 dagen") +
-      '</p><strong class="' +
-      safeClass +
+      formatMoney(calculation.plannedPerDay) +
+      '</strong><small>vaste richtlijn voor de hele betaalmaand</small></article><article class="budget-card"><p>Voor 2 dagen volgens plan</p><strong class="' +
+      plannedClass +
       '">' +
-      formatMoney(perTwoDays) +
-      "</strong><small>nooit meer dan wat resteert</small></article>" +
-      '<article class="budget-card"><p>' +
-      (calculation.cycle.daysLeft < 7 ? "Tot je salaris" : "Voor 7 dagen") +
-      '</p><strong class="' +
-      safeClass +
+      formatMoney(calculation.plannedPerTwoDays) +
+      '</strong><small>vaste richtlijn voor de hele betaalmaand</small></article><article class="budget-card"><p>Per week volgens plan</p><strong class="' +
+      plannedClass +
       '">' +
-      formatMoney(perWeek) +
-      "</strong><small>nooit meer dan wat resteert</small></article></div></section>" +
+      formatMoney(calculation.plannedPerWeek) +
+      "</strong><small>vaste richtlijn voor de hele betaalmaand</small></article></div></section>" +
       '<section class="dashboard-section" aria-labelledby="dashboard-upcoming-title">' +
       renderDashboardSectionHeading({
         id: "dashboard-upcoming-title",
@@ -1146,6 +1172,7 @@
         icon: "outgoing",
         tone: "is-upcoming"
       }) +
+      renderDashboardAlerts(calculation) +
       '<div class="dashboard-panels"><section class="panel"><header class="panel-header"><div><h3>Nog uitgaand</h3><p class="section-copy">' +
       formatMoney(calculation.outstandingOutgoings) +
       " staat nog gepland.</p></div><button class=\"text-button\" type=\"button\" data-action=\"goto-planning\">Alles bekijken</button></header><div class=\"panel-body\">" +
@@ -1155,21 +1182,7 @@
       ' staat nog open.</p></div><button class="text-button" type="button" data-action="goto-planning">Alles bekijken</button></header><div class="panel-body">' +
       renderOverviewRows(incomeEntries, "Nog geen verwachte inkomsten ingepland.") +
       '</div></section></div></section>' +
-      '<section class="dashboard-section" aria-labelledby="dashboard-accounts-title">' +
-      renderDashboardSectionHeading({
-        id: "dashboard-accounts-title",
-        kicker: "Saldi & verwachting",
-        title: "Hoe staan je rekeningen ervoor?",
-        copy: "Van je huidige saldo naar de verwachte eindstand na openstaande posten.",
-        icon: "wallet",
-        tone: "is-accounts",
-        action:
-          '<button class="button button-secondary button-small" type="button" data-action="open-balance-modal">Saldi bijwerken</button>'
-      }) +
-      '<section class="panel account-overview"><div class="panel-body"><div class="account-grid">' +
-      renderAccountCard("rabobank", calculation) +
-      renderAccountCard("bunq", calculation) +
-      "</div></div></section></section>" +
+      renderActualBudgetDashboard(calculation) +
       '<section class="dashboard-section" aria-labelledby="dashboard-extras-title">' +
       renderDashboardSectionHeading({
         id: "dashboard-extras-title",
@@ -1549,18 +1562,19 @@
         id: "settings-accounts-title",
         kicker: "Persoonlijk instellen",
         title: "Rekeningen & salarisdag",
-        copy: "Geef je rekeningen herkenbare namen en vul de actuele saldi in.",
+        copy:
+          "Geef je rekeningen herkenbare namen. Saldi zijn alleen nodig voor de optionele actuele herberekening.",
         icon: "wallet",
         tone: "is-accounts"
       }) +
       '<div class="panel settings-panel settings-profile-panel"><form id="settings-balance-form"><div class="field-grid account-settings-grid"><div class="form-field"><label for="setting-rabobank-name">Naam rekening 1</label><input id="setting-rabobank-name" name="accountNameRabobank" maxlength="40" required value="' +
       escapeHtml(accountLabel("rabobank")) +
-      '"></div><div class="form-field"><label for="setting-rabobank">Saldo rekening 1</label><input id="setting-rabobank" name="rabobank" type="text" inputmode="decimal" value="' +
-      escapeHtml(state.data.balances.rabobank) +
+      '"></div><div class="form-field"><label for="setting-rabobank">Saldo rekening 1 (optioneel)</label><input id="setting-rabobank" name="rabobank" type="text" inputmode="decimal" value="' +
+      escapeHtml(state.data.hasSetBalances ? state.data.balances.rabobank : "") +
       '"></div><div class="form-field"><label for="setting-bunq-name">Naam rekening 2</label><input id="setting-bunq-name" name="accountNameBunq" maxlength="40" required value="' +
       escapeHtml(accountLabel("bunq")) +
-      '"></div><div class="form-field"><label for="setting-bunq">Saldo rekening 2</label><input id="setting-bunq" name="bunq" type="text" inputmode="decimal" value="' +
-      escapeHtml(state.data.balances.bunq) +
+      '"></div><div class="form-field"><label for="setting-bunq">Saldo rekening 2 (optioneel)</label><input id="setting-bunq" name="bunq" type="text" inputmode="decimal" value="' +
+      escapeHtml(state.data.hasSetBalances ? state.data.balances.bunq : "") +
       '"></div><div class="form-field"><label for="setting-payday-day">Vaste salarisdag</label><input id="setting-payday-day" name="paydayDay" type="number" min="1" max="31" value="' +
       state.data.settings.paydayDay +
       '"><span class="helper-copy">Weekend? Dan gebruikt de app de vrijdag ervoor.</span></div></div><div class="form-actions"><button class="button button-primary" id="settings-save-button" type="submit">Instellingen opslaan</button><span class="balance-form-status">' +
@@ -1599,17 +1613,17 @@
         id: "settings-calculation-title",
         kicker: "Uitleg",
         title: "Zo berekent de app je budget",
-        copy: "De vier regels achter je betaalmaand, actuele ruimte en spaarpotjes.",
+        copy: "De regels achter je vaste planning, optionele herberekening en spaarpotjes.",
         icon: "calendar",
         tone: "is-month"
       }) +
       '<div class="panel settings-panel"><ul class="info-list"><li><span>1</span><div>De betaalmaand start op dag ' +
       state.data.settings.paydayDay +
-      ' en loopt tot de volgende salarisdag. In het weekend gebruikt de app de vrijdag ervoor.</div></li><li><span>2</span><div>Het maandoverzicht telt alle inkomsten, uitgaven en spaarinleg in die volledige betaalmaand mee, ook als ze al zijn verwerkt.</div></li><li><span>3</span><div>Het actuele bedrag gebruikt de saldi van ' +
+      ' en loopt tot de volgende salarisdag. In het weekend gebruikt de app de vrijdag ervoor.</div></li><li><span>2</span><div>De hoofdplanning telt alle inkomsten, uitgaven en spaarinleg in die volledige betaalmaand mee, ook als ze al zijn verwerkt. Actuele saldi veranderen dit bedrag niet.</div></li><li><span>3</span><div>De bedragen per dag, 2 dagen en per week volgens plan delen die vaste hoofdplanning door alle dagen van de betaalmaand.</div></li><li><span>4</span><div>De optionele actuele herberekening gebruikt de saldi van ' +
       escapeHtml(accountLabel("rabobank")) +
       " en " +
       escapeHtml(accountLabel("bunq")) +
-      ', trekt openstaande uitgaven en spaaroverboekingen af en telt nog te ontvangen inkomsten erbij op.</div></li><li><span>4</span><div>Je spaarpotjes blijven apart. Hun ingevulde saldi tellen niet mee als vrij besteedbaar geld.</div></li></ul></div></section>' +
+      ', trekt openstaande uitgaven en spaaroverboekingen af, telt nog te ontvangen inkomsten erbij op en verdeelt de uitkomst over de resterende dagen.</div></li><li><span>5</span><div>Je spaarpotjes blijven apart. Hun ingevulde saldi worden niet bij je vrij besteedbare bedrag opgeteld.</div></li></ul></div></section>' +
       '<section class="dashboard-section" aria-labelledby="settings-data-title">' +
       renderDashboardSectionHeading({
         id: "settings-data-title",
@@ -1737,8 +1751,8 @@
       escapeHtml(state.data.balances.bunq) +
       '"><span class="helper-copy" id="modal-bunq-help">Tel losse spaarpotjes niet mee als ze al apart staan.</span></div></div><div class="modal-footer"><button class="button button-secondary" type="button" data-action="close-modal">Annuleren</button><button class="button button-primary" type="submit">Saldi opslaan</button></div></form>';
     modalRoot.innerHTML = modalShell(
-      "Actuele saldi",
-      "Vul in wat er op dit moment daadwerkelijk op je rekeningen staat.",
+      "Actuele herberekening",
+      "Vul je echte saldi in om vanaf vandaag opnieuw te verdelen. Je vaste planning verandert niet.",
       body
     );
     focusModal();
@@ -2238,9 +2252,20 @@
     const formData = new FormData(form);
 
     if (form.id === "balance-form" || form.id === "settings-balance-form") {
-      const rabobankBalance = requiredNumberValue(formData.get("rabobank"));
-      const bunqBalance = requiredNumberValue(formData.get("bunq"));
-      if (rabobankBalance === null || bunqBalance === null) {
+      const rawRabobankBalance = String(formData.get("rabobank") || "").trim();
+      const rawBunqBalance = String(formData.get("bunq") || "").trim();
+      const hasAnyBalanceInput = Boolean(rawRabobankBalance || rawBunqBalance);
+      const requiresBalances = form.id === "balance-form" || hasAnyBalanceInput;
+      const rabobankBalance = requiresBalances
+        ? requiredNumberValue(rawRabobankBalance)
+        : null;
+      const bunqBalance = requiresBalances
+        ? requiredNumberValue(rawBunqBalance)
+        : null;
+      if (
+        requiresBalances &&
+        (rabobankBalance === null || bunqBalance === null)
+      ) {
         showFormError(
           form,
           "Vul voor beide rekeningen een geldig bedrag in.",
@@ -2248,6 +2273,7 @@
         );
         return;
       }
+      let settingsBalancesChanged = false;
       if (form.id === "settings-balance-form") {
         const accountNameRabobank = String(formData.get("accountNameRabobank") || "").trim();
         const accountNameBunq = String(formData.get("accountNameBunq") || "").trim();
@@ -2279,6 +2305,11 @@
         state.data.settings.accountNames.rabobank = accountNameRabobank;
         state.data.settings.accountNames.bunq = accountNameBunq;
         state.data.settings.paydayDay = paydayDay;
+        settingsBalancesChanged =
+          requiresBalances &&
+          (!state.data.hasSetBalances ||
+            rabobankBalance !== state.data.balances.rabobank ||
+            bunqBalance !== state.data.balances.bunq);
         const configuredExtraIncomeDate = parseDateInput(
           state.data.settings.extraIncomeDate
         );
@@ -2292,16 +2323,22 @@
           state.data.settings.extraIncomeEnabled = false;
         }
       }
-      state.data.balances.rabobank = rabobankBalance;
-      state.data.balances.bunq = bunqBalance;
-      state.data.hasSetBalances = true;
-      state.data.settings.balancesUpdatedAt = new Date().toISOString();
+      if (requiresBalances) {
+        state.data.balances.rabobank = rabobankBalance;
+        state.data.balances.bunq = bunqBalance;
+        state.data.hasSetBalances = true;
+        if (form.id === "balance-form" || settingsBalancesChanged) {
+          state.data.settings.balancesUpdatedAt = new Date().toISOString();
+        }
+      }
       if (form.id === "balance-form") {
         closeModal();
       }
       commit(
         form.id === "settings-balance-form"
-          ? "Je rekeningen, salarisdag en saldi zijn opgeslagen."
+          ? settingsBalancesChanged
+            ? "Je rekeningen, salarisdag en saldi zijn opgeslagen."
+            : "Je rekeningen en salarisdag zijn opgeslagen."
           : "Je actuele saldi zijn bijgewerkt."
       );
       return;
